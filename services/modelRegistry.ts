@@ -28,6 +28,26 @@ export const AVAILABLE_MODELS: AIModel[] = [
     family: 'other'
   },
 
+  // --- STABILITY AI (API) ---
+  {
+    id: 'sd3-medium-api',
+    name: 'Stable Diffusion 3 (API)',
+    provider: 'StabilityAI',
+    capabilities: ['text-to-image', 'image-to-image'],
+    description: 'Next-gen text-to-image model via Stability AI Cloud.',
+    isLocal: false,
+    family: 'sd3'
+  },
+  {
+    id: 'svd-xt-api',
+    name: 'Stable Video Diffusion XT (API)',
+    provider: 'StabilityAI',
+    capabilities: ['image-to-video'],
+    description: 'High quality image-to-video generation via Stability AI Cloud.',
+    isLocal: false,
+    family: 'svd'
+  },
+
   // --- OPENAI (SORA) ---
   {
     id: 'sora-v1',

@@ -56,7 +56,8 @@ export type ModelProvider =
   | 'Runway'
   | 'Luma'
   | 'Sora'
-  | 'Wan';
+  | 'Wan'
+  | 'StabilityAI';
 
 export type ModelCapability = 
   | 'text-to-video' 
@@ -94,6 +95,7 @@ export interface AppSettings {
     runway?: string;
     luma?: string;
     wan?: string;
+    stability?: string;
   };
 }
 

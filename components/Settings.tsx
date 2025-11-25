@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { AVAILABLE_MODELS } from '../services/modelRegistry';
 import { AIModel } from '../types';
-import { Server, Cloud, Loader2, Download, Key, CheckCircle, ExternalLink, HardDrive, Box, ScanLine, Trash2, FileCode, PlayCircle, Search, Cpu, Activity, Zap, Cookie, ChevronDown, Mic, Palette, Video } from 'lucide-react';
+import { Server, Cloud, Loader2, Download, Key, CheckCircle, ExternalLink, HardDrive, Box, ScanLine, Trash2, FileCode, PlayCircle, Search, Cpu, Activity, Zap, Cookie, ChevronDown, Mic, Palette, Video, Terminal } from 'lucide-react';
 
 const Settings: React.FC = () => {
   const [localEndpoint, setLocalEndpoint] = useState('http://localhost:7860');
@@ -19,6 +19,7 @@ const Settings: React.FC = () => {
   const [runwayKey, setRunwayKey] = useState('');
   const [lumaKey, setLumaKey] = useState('');
   const [wanKey, setWanKey] = useState('');
+  const [stabilityKey, setStabilityKey] = useState('');
   
   // GPU Config
   const [gpuBackend, setGpuBackend] = useState('cuda');
@@ -193,6 +194,39 @@ moviepy>=1.0.3
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+  };
+
+  const downloadPinokioScript = () => {
+    const pinokioJson = {
+        "version": "2.0",
+        "name": "munzai-studio",
+        "icon": "icon.png",
+        "description": "Launch MunzAI Studio with full backend support",
+        "run": [
+            {
+                "method": "shell.run",
+                "params": {
+                    "message": "npm install"
+                }
+            },
+            {
+                "method": "shell.run",
+                "params": {
+                    "message": "npm start"
+                }
+            }
+        ]
+    };
+    
+    const blob = new Blob([JSON.stringify(pinokioJson, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'munzai-pinokio.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   const filterModels = (models: AIModel[]) => {
@@ -384,6 +418,20 @@ moviepy>=1.0.3
                 </div>
             </div>
             
+             <div className="space-y-2">
+                <label className="text-sm font-medium text-zinc-300">Stability AI Key</label>
+                <div className="relative">
+                    <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600" />
+                    <input 
+                        type="password" 
+                        value={stabilityKey}
+                        onChange={(e) => setStabilityKey(e.target.value)}
+                        placeholder="sk-stability-..."
+                        className="w-full bg-zinc-950 border border-zinc-800 rounded-lg pl-10 pr-4 py-3 text-white focus:border-purple-500 outline-none"
+                    />
+                </div>
+            </div>
+            
             {/* New Video Gen APIs */}
             <div className="space-y-2">
                 <label className="text-sm font-medium text-zinc-300 flex items-center gap-2">
@@ -459,6 +507,34 @@ moviepy>=1.0.3
                     className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-indigo-500 outline-none"
                 />
             </div>
+        </div>
+      </section>
+
+      {/* Integrations & Launchers */}
+      <section className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6">
+        <div className="flex items-center gap-3 mb-6">
+            <Terminal className="w-6 h-6 text-green-400" />
+            <h2 className="text-lg font-bold text-white">Integrations & Launchers</h2>
+        </div>
+        
+        <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center">
+                    {/* Simulated Pinokio Logo */}
+                    <div className="text-black font-black text-2xl tracking-tighter">P.</div>
+                </div>
+                <div>
+                    <h3 className="font-bold text-zinc-200">Pinokio Browser Integration</h3>
+                    <p className="text-sm text-zinc-500">Auto-configure MunzAI Studio to run within the Pinokio ecosystem.</p>
+                </div>
+            </div>
+            <button 
+                onClick={downloadPinokioScript}
+                className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+            >
+                <Download className="w-4 h-4" />
+                Download Script
+            </button>
         </div>
       </section>
 
