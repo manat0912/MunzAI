@@ -1,0 +1,7 @@
+{
+  "name": "MunzAI Studio",
+  "description": "A state-of-the-art cinematic AI creation suite featuring Video-to-Video, Image-to-Image, and advanced Text-to-Media generation powered by Google Veo and Gemini models. Replaces local VRAM requirements with cloud-native performance.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
