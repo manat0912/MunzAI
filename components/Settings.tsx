@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { AVAILABLE_MODELS } from '../services/modelRegistry';
 import { AIModel } from '../types';
-import { Server, Cloud, Loader2, Download, Key, CheckCircle, ExternalLink, HardDrive, Box, ScanLine, Trash2, FileCode, PlayCircle, Search, Cpu, Activity, Zap, Cookie, ChevronDown, Mic, Palette, Video, Terminal, FilePlus, Workflow, Puzzle, Image as ImageIcon } from 'lucide-react';
+import { Server, Cloud, Loader2, Download, Key, CheckCircle, ExternalLink, HardDrive, Box, ScanLine, Trash2, FileCode, PlayCircle, Search, Cpu, Activity, Zap, Cookie, ChevronDown, Mic, Palette, Video, Terminal, FilePlus, Workflow, Puzzle, Image as ImageIcon, FileDown } from 'lucide-react';
 
 const Settings: React.FC = () => {
   const [localEndpoint, setLocalEndpoint] = useState('http://localhost:7860');
@@ -354,10 +354,11 @@ moviepy>=1.0.3
                                     {model.family && <p className="text-[10px] text-zinc-600 mt-0.5">Base: {model.family.toUpperCase()}</p>}
                                 </div>
                                 <div className="flex items-center gap-2">
+                                    {/* Install / State Management Button */}
                                     <button 
                                         onClick={() => handleModelAction(model.id)}
                                         disabled={isDownloading || isUninstalling || isPending}
-                                        className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all border min-w-[100px] justify-center
+                                        className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all border min-w-[80px] justify-center
                                             ${isUninstalling
                                                 ? 'bg-red-500/10 border-red-500/30 text-red-400 cursor-wait'
                                                 : isInstalled 
@@ -387,10 +388,25 @@ moviepy>=1.0.3
                                         ) : (
                                             <>
                                                 <Download className="w-3 h-3" />
-                                                <span>{hasSafeTensor ? 'Get .safetensors' : 'Install'}</span>
+                                                <span>Install</span>
                                             </>
                                         )}
                                     </button>
+
+                                    {/* Direct SafeTensor Download Button */}
+                                    {model.safeTensorUrl && (
+                                        <a 
+                                            href={model.safeTensorUrl}
+                                            download
+                                            className="px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-xs font-medium transition-colors flex items-center gap-2 border border-zinc-700 hover:border-zinc-600"
+                                            title="Download .safetensors file directly"
+                                        >
+                                            <FileDown className="w-3 h-3" />
+                                            <span className="hidden sm:inline">Get .safetensors</span>
+                                        </a>
+                                    )}
+
+                                    {/* Model Card Link */}
                                     {model.downloadUrl && (
                                         <a 
                                             href={model.downloadUrl} 
