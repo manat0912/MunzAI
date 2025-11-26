@@ -52,12 +52,30 @@ export type ModelProvider =
   | 'Hedra' 
   | 'Elai' 
   | 'Remaker'
+  | 'Mango'
   | 'Kling'
   | 'Runway'
   | 'Luma'
   | 'Sora'
   | 'Wan'
-  | 'StabilityAI';
+  | 'StabilityAI'
+  | 'Nvidia'      
+  | 'Mochi'       
+  | 'Hotshot'     
+  | 'SkyReels'    
+  | 'Pika'        
+  | 'LetsEnhance' 
+  | 'ModelScope'
+  | 'Rhymes'      
+  | 'CogVideo'    
+  | 'StepFun'     
+  | 'Pyramid'     
+  | 'HPC-AI'
+  | 'Recraft'     // New
+  | 'Ideogram'    // New
+  | 'BlackForest' // New (Flux API)
+  | 'Playground'  // New
+  | 'DeepFloyd';  // New
 
 export type ModelCapability = 
   | 'text-to-video' 
@@ -68,7 +86,10 @@ export type ModelCapability =
   | 'control-adapter'
   | 'lip-sync'
   | 'lora'
-  | 'motion-brush'; // New capability
+  | 'motion-brush'
+  | 'motion-module' // For AnimateDiff
+  | 'upscaler'      // For LetsEnhance/Upscale nodes
+  | 'node';         // For Custom Integrations
 
 export interface AIModel {
   id: string;
@@ -77,8 +98,9 @@ export interface AIModel {
   capabilities: ModelCapability[];
   description: string;
   isLocal?: boolean;
-  downloadUrl?: string; // For local weights
-  family?: 'sdxl' | 'flux' | 'sd15' | 'sd3' | 'wan' | 'svd' | 'hunyuan' | 'other'; // Architecture family for LoRA compatibility
+  downloadUrl?: string; // For local weights repo
+  safeTensorUrl?: string; // Direct link to .safetensors file
+  family?: 'sdxl' | 'flux' | 'sd15' | 'sd3' | 'wan' | 'svd' | 'hunyuan' | 'cosmos' | 'mochi' | 'animatediff' | 'allegro' | 'cogvideox' | 'pixart' | 'other'; 
 }
 
 export interface AppSettings {
@@ -91,11 +113,19 @@ export interface AppSettings {
     hedra?: string;
     elai?: string;
     remaker?: string;
+    mango?: string;
     kling?: string;
     runway?: string;
     luma?: string;
     wan?: string;
     stability?: string;
+    nvidia?: string;      
+    pika?: string;        
+    letsenhance?: string; 
+    recraft?: string;     // New
+    ideogram?: string;    // New
+    bfl?: string;         // New (Black Forest Labs)
+    playground?: string;  // New
   };
 }
 
@@ -114,4 +144,22 @@ export interface ControlNetSettings {
 export interface LoraConfig {
   modelId: string;
   strength: number; // 0.0 to 2.0 (usually)
+}
+
+// Pipeline / Node Workflow Types
+export type PipelineStrategy = 'Standard' | 'AnimateDiff' | 'CosmosEnhance' | 'CustomChain';
+
+export interface PipelineStep {
+  id: string;
+  name: string;
+  type: 'model' | 'adapter' | 'upscaler' | 'interpolator';
+  selectedId: string | null;
+  config?: any;
+}
+
+export interface WorkflowPreset {
+  id: string;
+  name: string;
+  strategy: PipelineStrategy;
+  steps: PipelineStep[];
 }

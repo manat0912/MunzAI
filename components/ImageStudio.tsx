@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { generateImage, editImage } from '../services/geminiService';
 import { AVAILABLE_MODELS } from '../services/modelRegistry';
-import { ControlNetSettings, ControlNetType, LoraConfig } from '../types';
+import { ControlNetSettings, ControlNetType, LoraConfig, AIModel } from '../types';
 import { Loader2, Image as ImageIcon, Download, Wand2, AlertCircle, ChevronDown, ScanLine, Fingerprint, Layers, Activity, Feather, PenTool, Palette, Plus, X, Type } from 'lucide-react';
 
 const ImageStudio: React.FC = () => {
@@ -16,8 +16,23 @@ const ImageStudio: React.FC = () => {
   const [aspectRatio, setAspectRatio] = useState('1:1');
   const [error, setError] = useState<string | null>(null);
 
+  const [allModels, setAllModels] = useState<AIModel[]>(AVAILABLE_MODELS);
   const [selectedModelId, setSelectedModelId] = useState<string>('imagen-3');
-  const selectedModel = AVAILABLE_MODELS.find(m => m.id === selectedModelId) || AVAILABLE_MODELS[0];
+  
+  // Load Custom Models
+  useEffect(() => {
+     const savedCustom = localStorage.getItem('munzai_custom_models');
+     if (savedCustom) {
+         try {
+             const customModels: AIModel[] = JSON.parse(savedCustom);
+             setAllModels([...AVAILABLE_MODELS, ...customModels]);
+         } catch (e) {
+             console.error("Failed to load custom models");
+         }
+     }
+  }, []);
+
+  const selectedModel = allModels.find(m => m.id === selectedModelId) || allModels[0];
 
   // ControlNet State
   const [controlNet, setControlNet] = useState<ControlNetSettings>({
@@ -33,7 +48,7 @@ const ImageStudio: React.FC = () => {
   const [showLoraSelector, setShowLoraSelector] = useState(false);
   
   // Available LoRAs filtered by current model family
-  const compatibleLoras = AVAILABLE_MODELS.filter(m => 
+  const compatibleLoras = allModels.filter(m => 
       m.capabilities.includes('lora') && 
       selectedModel.family && 
       m.family === selectedModel.family
@@ -93,13 +108,21 @@ const ImageStudio: React.FC = () => {
         // Mock simulation for Local/Other providers
         await new Promise(r => setTimeout(r, 2000));
         
-        // Log LoRA usage simulation
+        // Log simulation details
+        const loraInfo = activeLoras.length > 0 ? ` + ${activeLoras.length} LoRAs` : '';
+        const cnInfo = (controlNet.enabled && generationMode === 'image-to-image') 
+            ? ` + ControlNet [${controlNet.type} @ ${controlNet.strength}]` 
+            : '';
+
         if (activeLoras.length > 0) {
             console.log(`Applying LoRAs: ${activeLoras.map(l => `${l.modelId} (${l.strength})`).join(', ')}`);
         }
+        if (controlNet.enabled) {
+            console.log(`Applying ControlNet: ${controlNet.type} (Strength: ${controlNet.strength})`);
+        }
 
         if(selectedModel.isLocal) {
-            throw new Error(`Local backend not connected. (Simulated Request: ${selectedModel.name} + ${activeLoras.length} LoRAs)`);
+            throw new Error(`Local backend not connected. (Simulated Request: ${selectedModel.name}${loraInfo}${cnInfo})`);
         } else {
             throw new Error(`${selectedModel.name} requires API configuration.`);
         }
@@ -141,7 +164,7 @@ const ImageStudio: React.FC = () => {
                     }}
                     className="appearance-none bg-zinc-950 border border-zinc-800 text-zinc-300 text-xs font-medium py-2 pl-3 pr-8 rounded-lg outline-none focus:border-pink-500 cursor-pointer"
                 >
-                    {AVAILABLE_MODELS.filter(m => m.capabilities.includes('text-to-image') || m.capabilities.includes('image-to-image')).map(m => (
+                    {allModels.filter(m => m.capabilities.includes('text-to-image') || m.capabilities.includes('image-to-image')).map(m => (
                         <option key={m.id} value={m.id}>{m.name} {m.isLocal ? '(Local)' : ''}</option>
                     ))}
                 </select>
@@ -185,15 +208,26 @@ const ImageStudio: React.FC = () => {
           {generationMode === 'image-to-image' && (
               <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
                 <div className="flex justify-between items-center">
-                     <label className="text-sm font-medium text-zinc-300">Source Image / Structure Reference</label>
+                     <label className="text-sm font-medium text-zinc-300">
+                        {controlNet.enabled ? `Source for ${controlNet.type}` : 'Source Image / Structure Reference'}
+                     </label>
                      {sourceImage && <button onClick={clearSource} className="text-xs text-red-400 hover:text-red-300">Remove</button>}
                 </div>
                 
                 <div className={`relative h-40 border-2 border-dashed rounded-xl transition-all flex flex-col items-center justify-center text-center overflow-hidden
-                    ${sourceImage ? 'border-pink-500/30 bg-black' : 'border-zinc-800 hover:border-zinc-700 bg-zinc-950/50'}`}>
+                    ${sourceImage ? (controlNet.enabled ? 'border-emerald-500/50 bg-black' : 'border-pink-500/30 bg-black') : 'border-zinc-800 hover:border-zinc-700 bg-zinc-950/50'}`}>
                     
                     {sourcePreview ? (
-                       <img src={sourcePreview} className="h-full w-full object-contain" alt="Source" />
+                       <>
+                           <img src={sourcePreview} className="h-full w-full object-contain" alt="Source" />
+                           {controlNet.enabled && (
+                               <div className="absolute inset-0 pointer-events-none border-4 border-emerald-500/20 rounded-lg">
+                                   <div className="absolute top-2 left-2 bg-emerald-500/90 text-black text-[10px] font-bold px-1.5 py-0.5 rounded shadow-lg">
+                                       CN: {controlNet.type.toUpperCase()}
+                                   </div>
+                               </div>
+                           )}
+                       </>
                     ) : (
                         <>
                             <ImageIcon className="w-8 h-8 text-zinc-600 mb-2" />
@@ -242,7 +276,7 @@ const ImageStudio: React.FC = () => {
                   {activeLoras.length > 0 ? (
                       <div className="space-y-3">
                           {activeLoras.map(config => {
-                              const loraModel = AVAILABLE_MODELS.find(m => m.id === config.modelId);
+                              const loraModel = allModels.find(m => m.id === config.modelId);
                               return (
                                   <div key={config.modelId} className="bg-zinc-900 rounded-lg p-2 border border-zinc-800 text-xs">
                                       <div className="flex justify-between items-center mb-1">
@@ -377,7 +411,7 @@ const ImageStudio: React.FC = () => {
           {isGenerating ? <Loader2 className="animate-spin" /> : <Wand2 />}
           <span>
               {generationMode === 'image-to-image' && controlNet.enabled && sourceImage 
-                ? 'Generate with ControlNet' 
+                ? `Generate with ${controlNet.type}` 
                 : (generationMode === 'image-to-image' && sourceImage ? 'Transform Image' : 'Generate Image')
               }
           </span>
@@ -412,6 +446,7 @@ const ImageStudio: React.FC = () => {
               <h3 className="text-zinc-500 font-medium">Ready to create</h3>
               <p className="text-zinc-600 text-xs mt-2">Selected: {selectedModel.name}</p>
               {activeLoras.length > 0 && <p className="text-purple-500 text-xs mt-1">{activeLoras.length} LoRAs Active</p>}
+              {controlNet.enabled && <p className="text-emerald-500 text-xs mt-1">ControlNet: {controlNet.type}</p>}
            </div>
          )}
       </div>

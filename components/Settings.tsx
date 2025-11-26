@@ -1,8 +1,8 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { AVAILABLE_MODELS } from '../services/modelRegistry';
 import { AIModel } from '../types';
-import { Server, Cloud, Loader2, Download, Key, CheckCircle, ExternalLink, HardDrive, Box, ScanLine, Trash2, FileCode, PlayCircle, Search, Cpu, Activity, Zap, Cookie, ChevronDown, Mic, Palette, Video, Terminal } from 'lucide-react';
+import { Server, Cloud, Loader2, Download, Key, CheckCircle, ExternalLink, HardDrive, Box, ScanLine, Trash2, FileCode, PlayCircle, Search, Cpu, Activity, Zap, Cookie, ChevronDown, Mic, Palette, Video, Terminal, FilePlus, Workflow, Puzzle, Image as ImageIcon } from 'lucide-react';
 
 const Settings: React.FC = () => {
   const [localEndpoint, setLocalEndpoint] = useState('http://localhost:7860');
@@ -11,6 +11,7 @@ const Settings: React.FC = () => {
   const [hedraKey, setHedraKey] = useState('');
   const [remakerKey, setRemakerKey] = useState('');
   const [elaiKey, setElaiKey] = useState('');
+  const [mangoKey, setMangoKey] = useState(''); 
   const [hfToken, setHfToken] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   
@@ -20,7 +21,16 @@ const Settings: React.FC = () => {
   const [lumaKey, setLumaKey] = useState('');
   const [wanKey, setWanKey] = useState('');
   const [stabilityKey, setStabilityKey] = useState('');
+  const [nvidiaKey, setNvidiaKey] = useState('');
+  const [pikaKey, setPikaKey] = useState('');
+  const [letsEnhanceKey, setLetsEnhanceKey] = useState('');
   
+  // New Image Generation API Keys
+  const [recraftKey, setRecraftKey] = useState('');
+  const [ideogramKey, setIdeogramKey] = useState('');
+  const [bflKey, setBflKey] = useState('');
+  const [playgroundKey, setPlaygroundKey] = useState('');
+
   // GPU Config
   const [gpuBackend, setGpuBackend] = useState('cuda');
   const [deviceIds, setDeviceIds] = useState('0');
@@ -30,6 +40,10 @@ const Settings: React.FC = () => {
   const [downloadingModels, setDownloadingModels] = useState<Record<string, boolean>>({});
   const [uninstallingModels, setUninstallingModels] = useState<Record<string, boolean>>({});
   const [downloadProgress, setDownloadProgress] = useState<Record<string, number>>({});
+  const [customModels, setCustomModels] = useState<AIModel[]>([]);
+
+  // File Input for Custom Import
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Download Queue
   interface DownloadQueueItem {
@@ -52,6 +66,15 @@ const Settings: React.FC = () => {
     
     const savedHf = localStorage.getItem('munzai_hf_token');
     if (savedHf) setHfToken(savedHf);
+
+    const savedCustom = localStorage.getItem('munzai_custom_models');
+    if (savedCustom) {
+        try {
+            setCustomModels(JSON.parse(savedCustom));
+        } catch (e) {
+            console.error("Failed to parse custom models");
+        }
+    }
   }, []);
 
   const handleHfTokenChange = (val: string) => {
@@ -151,6 +174,33 @@ const Settings: React.FC = () => {
       setDownloadQueue(prev => [...prev, ...newQueueItems]);
   };
 
+  const handleImportModel = (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (e.target.files && e.target.files[0]) {
+          const file = e.target.files[0];
+          // Create a new Custom Model
+          const newModel: AIModel = {
+              id: `custom-${Date.now()}`,
+              name: file.name.replace('.safetensors', '').replace(/_/g, ' '),
+              provider: 'Local',
+              capabilities: ['text-to-image', 'image-to-image'], // Default capabilities for generic safetensors
+              description: `Imported local model: ${file.name}`,
+              isLocal: true,
+              family: 'other' // User could technically specify this, but default to other
+          };
+
+          const updatedCustom = [...customModels, newModel];
+          setCustomModels(updatedCustom);
+          localStorage.setItem('munzai_custom_models', JSON.stringify(updatedCustom));
+          
+          // Mark as installed
+          const newInstalled = { ...installedModels, [newModel.id]: true };
+          updateInstalledState(newInstalled);
+
+          // Clear input
+          if (fileInputRef.current) fileInputRef.current.value = '';
+      }
+  };
+
   const downloadRequirements = () => {
       const content = `
 # MunzAI Studio - Advanced Dependencies
@@ -238,11 +288,14 @@ moviepy>=1.0.3
       );
   };
 
-  const localVideoModels = filterModels(AVAILABLE_MODELS.filter(m => m.isLocal && (m.capabilities.includes('text-to-video') || m.capabilities.includes('image-to-video'))));
+  const localVideoModels = filterModels(AVAILABLE_MODELS.filter(m => m.isLocal && (m.capabilities.includes('text-to-video') || m.capabilities.includes('image-to-video')) && !m.capabilities.includes('node') && !m.capabilities.includes('motion-module')));
   const localImageModels = filterModels(AVAILABLE_MODELS.filter(m => m.isLocal && m.capabilities.includes('text-to-image') && !localVideoModels.includes(m)));
   const controlNetModels = filterModels(AVAILABLE_MODELS.filter(m => m.isLocal && m.capabilities.includes('control-adapter')));
   const loraModels = filterModels(AVAILABLE_MODELS.filter(m => m.isLocal && m.capabilities.includes('lora')));
   const lipSyncModels = filterModels(AVAILABLE_MODELS.filter(m => m.isLocal && m.capabilities.includes('lip-sync')));
+  const integrationNodes = filterModels(AVAILABLE_MODELS.filter(m => m.isLocal && m.capabilities.includes('node')));
+  const motionModules = filterModels(AVAILABLE_MODELS.filter(m => m.isLocal && m.capabilities.includes('motion-module')));
+  const filteredCustomModels = filterModels(customModels);
 
   const renderModelList = (models: AIModel[], title: string, icon: React.ReactNode) => {
     if (models.length === 0) return null; 
@@ -276,6 +329,7 @@ moviepy>=1.0.3
                     const isUninstalling = uninstallingModels[model.id];
                     const progress = queueItem ? queueItem.progress : (downloadProgress[model.id] || 0);
                     const isHF = model.downloadUrl?.includes('huggingface');
+                    const hasSafeTensor = !!model.safeTensorUrl;
 
                     return (
                         <div key={model.id} className="bg-zinc-950 border border-zinc-800 rounded-xl hover:border-zinc-700 transition-colors p-4">
@@ -287,6 +341,9 @@ moviepy>=1.0.3
                                             <span className="text-[10px] bg-yellow-500/10 text-yellow-500 px-1.5 py-0.5 rounded flex items-center gap-1" title="Hosted on Hugging Face">
                                                 <span className="font-serif italic font-bold">hf</span>
                                             </span>
+                                        )}
+                                        {hasSafeTensor && (
+                                            <span className="text-[10px] bg-blue-500/10 text-blue-400 px-1.5 py-0.5 rounded font-mono">.safetensors</span>
                                         )}
                                         {isInstalled && !isUninstalling && <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full font-medium">INSTALLED</span>}
                                         {isDownloading && <span className="text-[10px] bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded-full font-medium animate-pulse">DOWNLOADING {Math.round(progress)}%</span>}
@@ -330,19 +387,21 @@ moviepy>=1.0.3
                                         ) : (
                                             <>
                                                 <Download className="w-3 h-3" />
-                                                <span>Install</span>
+                                                <span>{hasSafeTensor ? 'Get .safetensors' : 'Install'}</span>
                                             </>
                                         )}
                                     </button>
-                                    <a 
-                                        href={model.downloadUrl} 
-                                        target="_blank" 
-                                        rel="noopener noreferrer"
-                                        className="p-2 text-zinc-500 hover:text-indigo-400 transition-colors"
-                                        title="View on HuggingFace/Github"
-                                    >
-                                        <ExternalLink className="w-4 h-4" />
-                                    </a>
+                                    {model.downloadUrl && (
+                                        <a 
+                                            href={model.downloadUrl} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer"
+                                            className="p-2 text-zinc-500 hover:text-indigo-400 transition-colors"
+                                            title="View Model Card"
+                                        >
+                                            <ExternalLink className="w-4 h-4" />
+                                        </a>
+                                    )}
                                 </div>
                             </div>
                             
@@ -404,6 +463,20 @@ moviepy>=1.0.3
                 </div>
             </div>
 
+            {/* NVIDIA NIM */}
+             <div className="space-y-2">
+                <label className="text-sm font-medium text-zinc-300 flex items-center gap-2">
+                    <Cpu className="w-3 h-3 text-green-400" /> NVIDIA NIM Key (Cosmos)
+                </label>
+                <input 
+                    type="password" 
+                    value={nvidiaKey}
+                    onChange={(e) => setNvidiaKey(e.target.value)}
+                    placeholder="nvapi-..."
+                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-green-500 outline-none"
+                />
+            </div>
+
              <div className="space-y-2">
                 <label className="text-sm font-medium text-zinc-300">Anthropic API Key</label>
                 <div className="relative">
@@ -431,6 +504,59 @@ moviepy>=1.0.3
                     />
                 </div>
             </div>
+
+            {/* NEW IMAGE API KEYS */}
+            <div className="space-y-2">
+                <label className="text-sm font-medium text-zinc-300 flex items-center gap-2">
+                    <ImageIcon className="w-3 h-3 text-teal-400" /> Recraft API Key
+                </label>
+                <input 
+                    type="password" 
+                    value={recraftKey}
+                    onChange={(e) => setRecraftKey(e.target.value)}
+                    placeholder="recraft-..."
+                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-teal-500 outline-none"
+                />
+            </div>
+
+            <div className="space-y-2">
+                <label className="text-sm font-medium text-zinc-300 flex items-center gap-2">
+                    <ImageIcon className="w-3 h-3 text-orange-400" /> Ideogram API Key
+                </label>
+                <input 
+                    type="password" 
+                    value={ideogramKey}
+                    onChange={(e) => setIdeogramKey(e.target.value)}
+                    placeholder="ideogram-..."
+                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-orange-500 outline-none"
+                />
+            </div>
+            
+             <div className="space-y-2">
+                <label className="text-sm font-medium text-zinc-300 flex items-center gap-2">
+                    <ImageIcon className="w-3 h-3 text-white" /> Flux.1 (BFL) API Key
+                </label>
+                <input 
+                    type="password" 
+                    value={bflKey}
+                    onChange={(e) => setBflKey(e.target.value)}
+                    placeholder="bfl-..."
+                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-white outline-none"
+                />
+            </div>
+            
+             <div className="space-y-2">
+                <label className="text-sm font-medium text-zinc-300 flex items-center gap-2">
+                    <ImageIcon className="w-3 h-3 text-blue-400" /> Playground AI Key
+                </label>
+                <input 
+                    type="password" 
+                    value={playgroundKey}
+                    onChange={(e) => setPlaygroundKey(e.target.value)}
+                    placeholder="playground-..."
+                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-blue-500 outline-none"
+                />
+            </div>
             
             {/* New Video Gen APIs */}
             <div className="space-y-2">
@@ -456,6 +582,19 @@ moviepy>=1.0.3
                     onChange={(e) => setLumaKey(e.target.value)}
                     placeholder="luma-..."
                     className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-blue-500 outline-none"
+                />
+            </div>
+
+            <div className="space-y-2">
+                <label className="text-sm font-medium text-zinc-300 flex items-center gap-2">
+                    <Video className="w-3 h-3 text-purple-400" /> Pika Labs Key
+                </label>
+                <input 
+                    type="password" 
+                    value={pikaKey}
+                    onChange={(e) => setPikaKey(e.target.value)}
+                    placeholder="pika-..."
+                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-purple-500 outline-none"
                 />
             </div>
             
@@ -485,6 +624,20 @@ moviepy>=1.0.3
                 />
             </div>
 
+            {/* Enhancers */}
+             <div className="space-y-2">
+                <label className="text-sm font-medium text-zinc-300 flex items-center gap-2">
+                    <Activity className="w-3 h-3 text-teal-400" /> LetsEnhance API Key
+                </label>
+                <input 
+                    type="password" 
+                    value={letsEnhanceKey}
+                    onChange={(e) => setLetsEnhanceKey(e.target.value)}
+                    placeholder="api-..."
+                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-teal-500 outline-none"
+                />
+            </div>
+
             {/* Lip Sync Keys */}
             <div className="space-y-2">
                 <label className="text-sm font-medium text-zinc-300">Hedra API Key</label>
@@ -504,6 +657,28 @@ moviepy>=1.0.3
                     value={remakerKey}
                     onChange={(e) => setRemakerKey(e.target.value)}
                     placeholder="remaker-..."
+                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-indigo-500 outline-none"
+                />
+            </div>
+
+             <div className="space-y-2">
+                <label className="text-sm font-medium text-zinc-300">Elai.io API Key</label>
+                <input 
+                    type="password" 
+                    value={elaiKey}
+                    onChange={(e) => setElaiKey(e.target.value)}
+                    placeholder="elai-..."
+                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-indigo-500 outline-none"
+                />
+            </div>
+            
+            <div className="space-y-2">
+                <label className="text-sm font-medium text-zinc-300">Mango Animate API Key</label>
+                <input 
+                    type="password" 
+                    value={mangoKey}
+                    onChange={(e) => setMangoKey(e.target.value)}
+                    placeholder="mango-..."
                     className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-indigo-500 outline-none"
                 />
             </div>
@@ -687,10 +862,41 @@ moviepy>=1.0.3
                     />
                 </div>
             </div>
+            
+            {/* Import Custom SafeTensor Model Section */}
+            <div className="p-4 bg-zinc-950/80 border border-dashed border-zinc-700 rounded-xl flex items-center justify-between">
+                 <div className="flex items-center gap-3">
+                     <div className="p-2 bg-blue-500/10 rounded-lg text-blue-400">
+                         <FilePlus className="w-5 h-5" />
+                     </div>
+                     <div>
+                         <h4 className="text-sm font-bold text-zinc-200">Import Custom Model (.safetensors)</h4>
+                         <p className="text-xs text-zinc-500">Add local weights directly to your library.</p>
+                     </div>
+                 </div>
+                 <div className="relative">
+                     <input 
+                        type="file" 
+                        accept=".safetensors,.ckpt,.bin" 
+                        ref={fileInputRef}
+                        onChange={handleImportModel}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                     />
+                     <button className="px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-medium transition-colors flex items-center gap-2">
+                         <Download className="w-3 h-3" /> Import File
+                     </button>
+                 </div>
+            </div>
 
             <div className="space-y-8">
+                {renderModelList(filteredCustomModels, 'Custom Imported Models', <HardDrive className="w-4 h-4 text-blue-400" />)}
                 {renderModelList(localVideoModels, 'Video Generation Models', <Box className="w-4 h-4 text-pink-400" />)}
                 {renderModelList(localImageModels, 'Image Generation Models', <Box className="w-4 h-4 text-indigo-400" />)}
+                
+                {/* Node & Integration Manager */}
+                {renderModelList(integrationNodes, 'Community Nodes & Integrations', <Puzzle className="w-4 h-4 text-green-400" />)}
+                {renderModelList(motionModules, 'Motion Modules (AnimateDiff)', <Workflow className="w-4 h-4 text-orange-400" />)}
+
                 {renderModelList(controlNetModels, 'ControlNet Adapters', <ScanLine className="w-4 h-4 text-emerald-400" />)}
                 {renderModelList(loraModels, 'LoRA & Style Adapters', <Palette className="w-4 h-4 text-purple-400" />)}
                 {renderModelList(lipSyncModels, 'Lip Sync & Face Animation', <Mic className="w-4 h-4 text-orange-400" />)}

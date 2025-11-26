@@ -1,11 +1,11 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { generateVideo } from '../services/geminiService';
-import { VideoConfig, Preset, AnimationSettings, AIModel, LoraConfig } from '../types';
+import { VideoConfig, Preset, AnimationSettings, AIModel, LoraConfig, PipelineStrategy } from '../types';
 import { AVAILABLE_MODELS } from '../services/modelRegistry';
 import InpaintingCanvas from './InpaintingCanvas';
 import AudioRecorder from './AudioRecorder';
-import { Loader2, Film, Upload, Play, AlertCircle, Save, Camera, Zap, ChevronDown, Video as VideoIcon, Eraser, Scan, Scissors, Paintbrush, Info, Music, Activity, Waves, Mic2, Crosshair, Users, Palette, Plus, X, Type, Image as ImageIcon } from 'lucide-react';
+import { Loader2, Film, Upload, Play, AlertCircle, Save, Camera, Zap, ChevronDown, Video as VideoIcon, Eraser, Scan, Scissors, Paintbrush, Info, Music, Activity, Waves, Mic2, Crosshair, Users, Palette, Plus, X, Type, Image as ImageIcon, Workflow, Layers } from 'lucide-react';
 
 const DEFAULT_PRESETS: Preset[] = [
   { id: 'scifi', name: 'Sci-Fi', category: 'Cinematic', description: 'Futuristic, neon-lit cyberpunk style', promptModifier: 'Cinematic sci-fi style, cyberpunk aesthetics, neon lighting, futuristic structures, high contrast, volumetric fog' },
@@ -70,19 +70,20 @@ const VideoStudio: React.FC = () => {
     trackingEnabled: false
   });
   
-  // Model Selection
+  // Model & Pipeline Selection
+  const [allModels, setAllModels] = useState<AIModel[]>(AVAILABLE_MODELS);
   const [selectedModelId, setSelectedModelId] = useState<string>('veo-3.1');
+  const [pipelineStrategy, setPipelineStrategy] = useState<PipelineStrategy>('Standard');
+  const [selectedMotionModuleId, setSelectedMotionModuleId] = useState<string>('animatediff-v3');
+  const [selectedUpscalerId, setSelectedUpscalerId] = useState<string>('letsenhance-api');
+  
   const [error, setError] = useState<string | null>(null);
 
   // LoRA State
   const [activeLoras, setActiveLoras] = useState<LoraConfig[]>([]);
   const [showLoraSelector, setShowLoraSelector] = useState(false);
 
-  const selectedModel = AVAILABLE_MODELS.find(m => m.id === selectedModelId) || AVAILABLE_MODELS[0];
-  const supportsVideoToVideo = selectedModel.capabilities.includes('video-to-video');
-  const compatibleLoras = AVAILABLE_MODELS.filter(m => m.capabilities.includes('lora') && selectedModel.family && m.family === selectedModel.family);
-
-  // Load custom presets on mount
+  // Load custom presets and models on mount
   useEffect(() => {
     const saved = localStorage.getItem('munzai_presets');
     if (saved) {
@@ -93,14 +94,33 @@ const VideoStudio: React.FC = () => {
         console.error("Failed to load presets");
       }
     }
+
+    const savedCustomModels = localStorage.getItem('munzai_custom_models');
+    if (savedCustomModels) {
+        try {
+            const customModels: AIModel[] = JSON.parse(savedCustomModels);
+            setAllModels([...AVAILABLE_MODELS, ...customModels]);
+        } catch (e) {
+            console.error("Failed to load custom models");
+        }
+    }
   }, []);
+
+  const selectedModel = allModels.find(m => m.id === selectedModelId) || allModels[0];
+  const supportsVideoToVideo = selectedModel.capabilities.includes('video-to-video');
+  const compatibleLoras = allModels.filter(m => m.capabilities.includes('lora') && selectedModel.family && m.family === selectedModel.family);
+  const motionModules = allModels.filter(m => m.capabilities.includes('motion-module'));
+  const upscalers = allModels.filter(m => m.capabilities.includes('upscaler'));
 
   // Update available models based on active tab
   const getFilteredModels = () => {
       if (activeTab === 'lipsync') {
-          return AVAILABLE_MODELS.filter(m => m.capabilities.includes('lip-sync'));
+          return allModels.filter(m => m.capabilities.includes('lip-sync'));
       }
-      return AVAILABLE_MODELS.filter(m => m.capabilities.includes('text-to-video') || m.capabilities.includes('image-to-video') || m.capabilities.includes('video-to-video'));
+      return allModels.filter(m => 
+          (m.capabilities.includes('text-to-video') || m.capabilities.includes('image-to-video') || m.capabilities.includes('video-to-video')) &&
+          !m.capabilities.includes('node') // Filter out utility nodes from main selector
+      );
   };
 
   useEffect(() => {
@@ -111,7 +131,7 @@ const VideoStudio: React.FC = () => {
          setSelectedModelId(validModels[0].id);
          setActiveLoras([]);
      }
-  }, [activeTab]);
+  }, [activeTab, allModels]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -319,9 +339,17 @@ const VideoStudio: React.FC = () => {
              // Simulation for Local/External Models
              await new Promise(resolve => setTimeout(resolve, 2000));
              
-             if (activeLoras.length > 0) {
-                console.log(`Applying Video LoRAs: ${activeLoras.map(l => `${l.modelId} (${l.strength})`).join(', ')}`);
+             let logMsg = `Simulated Generation: ${selectedModel.name}`;
+             if (pipelineStrategy === 'AnimateDiff') {
+                 logMsg += ` + Motion: ${allModels.find(m => m.id === selectedMotionModuleId)?.name}`;
              }
+             if (pipelineStrategy === 'CosmosEnhance') {
+                 logMsg += ` + Upscale: ${allModels.find(m => m.id === selectedUpscalerId)?.name}`;
+             }
+             if (activeLoras.length > 0) {
+                logMsg += ` + ${activeLoras.length} LoRAs`;
+             }
+             console.log(logMsg);
 
              if (selectedModel.isLocal) {
                  throw new Error(`Local model '${selectedModel.name}' is not connected. Please verify settings.`);
@@ -351,22 +379,23 @@ const VideoStudio: React.FC = () => {
                         <h2 className="text-lg font-bold text-white">{activeTab === 'lipsync' ? 'Lip Sync Studio' : 'Video Studio'}</h2>
                         <div className="flex items-center gap-2">
                              <div className={`w-2 h-2 rounded-full ${selectedModel.isLocal ? 'bg-pink-500' : 'bg-emerald-500'}`} />
-                             <p className="text-xs text-zinc-500">{selectedModel.name}</p>
+                             <span className="text-xs text-zinc-500">Active Model</span>
                         </div>
                     </div>
                 </div>
-                {/* Model Selector */}
-                <div className="relative">
+
+                {/* Global Model Selector */}
+                <div className="relative w-48 sm:w-60">
                     <select 
                         value={selectedModelId}
                         onChange={(e) => setSelectedModelId(e.target.value)}
-                        className="appearance-none bg-zinc-950 border border-zinc-800 text-zinc-300 text-xs font-medium py-1.5 pl-3 pr-8 rounded-lg outline-none focus:border-indigo-500 cursor-pointer"
+                        className="w-full appearance-none bg-zinc-950 border border-zinc-800 text-zinc-200 text-xs font-medium py-2 pl-3 pr-8 rounded-lg outline-none focus:border-indigo-500 cursor-pointer"
                     >
                         {getFilteredModels().map(m => (
-                            <option key={m.id} value={m.id}>{m.name} {m.isLocal ? '(Local)' : ''}</option>
+                            <option key={m.id} value={m.id}>{m.name}</option>
                         ))}
                     </select>
-                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-zinc-500 pointer-events-none" />
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-zinc-500 pointer-events-none" />
                 </div>
             </div>
             
@@ -390,6 +419,75 @@ const VideoStudio: React.FC = () => {
             {/* COMPOSITION TAB */}
             {activeTab === 'compose' && (
                 <div className="space-y-6">
+                    {/* Pipeline Configuration Accordion */}
+                    <div className="bg-zinc-950 rounded-xl border border-zinc-800 p-4 space-y-4">
+                        <div className="flex items-center gap-2 mb-2 text-indigo-400">
+                             <Workflow className="w-4 h-4" />
+                             <span className="text-sm font-bold uppercase tracking-wider">Pipeline Strategy</span>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 gap-4">
+                            <div className="space-y-2">
+                                <label className="text-xs font-medium text-zinc-400">Generation Strategy</label>
+                                <div className="relative">
+                                    <select
+                                        value={pipelineStrategy}
+                                        onChange={(e) => setPipelineStrategy(e.target.value as PipelineStrategy)}
+                                        className="w-full appearance-none bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-white focus:border-indigo-500 outline-none cursor-pointer"
+                                    >
+                                        <option value="Standard">Standard (Single Model)</option>
+                                        <option value="AnimateDiff">AnimateDiff (Modular)</option>
+                                        <option value="CosmosEnhance">Cosmos + Upscale</option>
+                                        <option value="CustomChain">Custom Chain</option>
+                                    </select>
+                                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-zinc-500 pointer-events-none" />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* AnimateDiff Specific Config */}
+                        {pipelineStrategy === 'AnimateDiff' && (
+                            <div className="animate-in fade-in slide-in-from-top-2 pt-4 border-t border-zinc-800 space-y-2">
+                                <label className="text-xs font-medium text-zinc-400 flex items-center gap-2">
+                                    <Layers className="w-3 h-3 text-orange-400" /> Motion Module
+                                </label>
+                                <div className="relative">
+                                    <select 
+                                        value={selectedMotionModuleId}
+                                        onChange={(e) => setSelectedMotionModuleId(e.target.value)}
+                                        className="w-full appearance-none bg-zinc-900 border border-zinc-800 text-white text-xs py-2 px-3 rounded-lg outline-none focus:border-orange-500 cursor-pointer"
+                                    >
+                                        {motionModules.map(m => (
+                                            <option key={m.id} value={m.id}>{m.name}</option>
+                                        ))}
+                                    </select>
+                                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-zinc-500 pointer-events-none" />
+                                </div>
+                            </div>
+                        )}
+                        
+                        {/* Cosmos Enhance Config */}
+                        {pipelineStrategy === 'CosmosEnhance' && (
+                             <div className="animate-in fade-in slide-in-from-top-2 pt-4 border-t border-zinc-800 space-y-2">
+                                <label className="text-xs font-medium text-zinc-400 flex items-center gap-2">
+                                    <Activity className="w-3 h-3 text-teal-400" /> Upscaler / Enhancer
+                                </label>
+                                <div className="relative">
+                                    <select 
+                                        value={selectedUpscalerId}
+                                        onChange={(e) => setSelectedUpscalerId(e.target.value)}
+                                        className="w-full appearance-none bg-zinc-900 border border-zinc-800 text-white text-xs py-2 px-3 rounded-lg outline-none focus:border-teal-500 cursor-pointer"
+                                    >
+                                        {upscalers.map(m => (
+                                            <option key={m.id} value={m.id}>{m.name}</option>
+                                        ))}
+                                    </select>
+                                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-zinc-500 pointer-events-none" />
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
                     {/* Generation Mode Toggle */}
                     <div className="bg-zinc-950 p-1 rounded-xl border border-zinc-800 flex">
                         <button
@@ -491,7 +589,7 @@ const VideoStudio: React.FC = () => {
                             {activeLoras.length > 0 && (
                                 <div className="space-y-2">
                                     {activeLoras.map(config => {
-                                        const loraModel = AVAILABLE_MODELS.find(m => m.id === config.modelId);
+                                        const loraModel = allModels.find(m => m.id === config.modelId);
                                         return (
                                             <div key={config.modelId} className="bg-zinc-900 rounded-lg p-2 border border-zinc-800 text-xs flex items-center gap-2">
                                                 <span className="font-medium text-zinc-300 truncate w-1/3">{loraModel?.name}</span>
