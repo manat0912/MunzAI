@@ -192,7 +192,7 @@ export const AVAILABLE_MODELS: AIModel[] = [
     id: 'pika-labs-api',
     name: 'Pika Labs (API)',
     provider: 'Pika',
-    capabilities: ['text-to-video', 'image-to-video'],
+    capabilities: ['text-to-video', 'image-to-video', 'video-inpainting'],
     description: 'Popular AI video generation platform API.',
     isLocal: false,
     family: 'other'
@@ -421,7 +421,7 @@ export const AVAILABLE_MODELS: AIModel[] = [
     id: 'runway-gen2',
     name: 'Runway Gen-2',
     provider: 'Runway',
-    capabilities: ['text-to-video', 'image-to-video'],
+    capabilities: ['text-to-video', 'image-to-video', 'video-inpainting'],
     description: 'Standard model for reliable generation.',
     isLocal: false,
     family: 'other'
@@ -488,6 +488,15 @@ export const AVAILABLE_MODELS: AIModel[] = [
     capabilities: ['text-to-video', 'image-to-video'],
     description: 'Cloud API access for Wan models.',
     isLocal: false,
+    family: 'wan'
+  },
+  {
+    id: 'wan-2.2-vace',
+    name: 'Wan 2.2 VACE Inpainting',
+    provider: 'Local',
+    capabilities: ['video-inpainting', 'magic-quill'],
+    description: 'Advanced inpainting with VACE architecture.',
+    isLocal: true,
     family: 'wan'
   },
 
@@ -733,6 +742,93 @@ export const AVAILABLE_MODELS: AIModel[] = [
     capabilities: ['lip-sync'],
     description: 'Talking photo and avatar animation API.',
     isLocal: false,
+    family: 'other'
+  },
+
+  // --- VIDEO INPAINTING & MAGIC QUILL ---
+  {
+    id: 'sora-2-inpaint',
+    name: 'Sora 2 Inpainting',
+    provider: 'Sora',
+    capabilities: ['video-inpainting'],
+    description: 'Powered by OpenAI Sora 2 architecture.',
+    isLocal: false,
+    family: 'other'
+  },
+  {
+    id: 'mootion-api',
+    name: 'Mootion',
+    provider: 'Mootion',
+    capabilities: ['video-inpainting', 'magic-quill'],
+    description: 'Professional SaaS for video manipulation.',
+    isLocal: false,
+    family: 'other'
+  },
+  {
+    id: 'deepai-oneshot',
+    name: 'DeepAI One-Shot',
+    provider: 'DeepAI',
+    capabilities: ['video-inpainting'],
+    description: 'Fast single-shot video inpainting.',
+    isLocal: false,
+    family: 'other'
+  },
+  {
+    id: 'generative-omnimatte',
+    name: 'Generative Omnimatte',
+    provider: 'Local',
+    capabilities: ['video-inpainting', 'magic-quill'],
+    description: 'Google Research: Layer-based video decomposition.',
+    isLocal: true,
+    downloadUrl: 'https://github.com/google-research/generative-omnimatte',
+    family: 'other'
+  },
+  {
+    id: 'e2fgvi',
+    name: 'E2FGVI',
+    provider: 'Local',
+    capabilities: ['video-inpainting'],
+    description: 'Edge-Connect Flow-Guided Video Inpainting.',
+    isLocal: true,
+    downloadUrl: 'https://github.com/MCG-NKU/E2FGVI',
+    family: 'other'
+  },
+  {
+    id: 'fgvc',
+    name: 'FGVC',
+    provider: 'Local',
+    capabilities: ['video-inpainting'],
+    description: 'Flow-Guided Video Completion.',
+    isLocal: true,
+    downloadUrl: 'https://github.com/vt-vl-lab/FGVC',
+    family: 'other'
+  },
+  {
+    id: 'sd-video-inpaint',
+    name: 'SD Video Inpainting',
+    provider: 'Local',
+    capabilities: ['video-inpainting', 'magic-quill'],
+    description: 'Community forks for Deforum/AnimateDiff inpainting.',
+    isLocal: true,
+    family: 'other'
+  },
+  {
+    id: 'diffuman4d',
+    name: 'Diffuman4D',
+    provider: 'Local',
+    capabilities: ['video-inpainting'],
+    description: 'Human-centric video generation and editing.',
+    isLocal: true,
+    family: 'other'
+  },
+  {
+    id: 'davis-benchmark',
+    name: 'DAVIS Benchmark Dataset',
+    provider: 'Local',
+    capabilities: ['video-inpainting'],
+    description: 'Standard dataset for evaluating video segmentation.',
+    isLocal: true,
+    downloadUrl: 'https://davischallenge.org/',
     family: 'other'
   },
 

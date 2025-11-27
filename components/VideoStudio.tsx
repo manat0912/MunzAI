@@ -5,7 +5,7 @@ import { VideoConfig, Preset, AnimationSettings, AIModel, LoraConfig, PipelineSt
 import { AVAILABLE_MODELS } from '../services/modelRegistry';
 import InpaintingCanvas from './InpaintingCanvas';
 import AudioRecorder from './AudioRecorder';
-import { Loader2, Film, Upload, Play, AlertCircle, Save, Camera, Zap, ChevronDown, Video as VideoIcon, Eraser, Scan, Scissors, Paintbrush, Info, Music, Activity, Waves, Mic2, Crosshair, Users, Palette, Plus, X, Type, Image as ImageIcon, Workflow, Layers } from 'lucide-react';
+import { Loader2, Film, Upload, Play, AlertCircle, Save, Camera, Zap, ChevronDown, Video as VideoIcon, Eraser, Scan, Scissors, Paintbrush, Info, Music, Activity, Waves, Mic2, Crosshair, Users, Palette, Plus, X, Type, Image as ImageIcon, Workflow, Layers, Wand2, Download, Share2 } from 'lucide-react';
 
 const DEFAULT_PRESETS: Preset[] = [
   { id: 'scifi', name: 'Sci-Fi', category: 'Cinematic', description: 'Futuristic, neon-lit cyberpunk style', promptModifier: 'Cinematic sci-fi style, cyberpunk aesthetics, neon lighting, futuristic structures, high contrast, volumetric fog' },
@@ -50,6 +50,10 @@ const VideoStudio: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [inpaintFrame, setInpaintFrame] = useState<string | null>(null);
   const [maskBlob, setMaskBlob] = useState<Blob | null>(null);
+  const [magicQuillEnabled, setMagicQuillEnabled] = useState(false);
+  const [maskConcept, setMaskConcept] = useState(''); // What to erase
+  const [targetConcept, setTargetConcept] = useState(''); // What to fill
+  const [flowGuidance, setFlowGuidance] = useState(1.0); // Optical Flow strength
 
   const [config, setConfig] = useState<VideoConfig>({
     resolution: '720p',
@@ -117,9 +121,12 @@ const VideoStudio: React.FC = () => {
       if (activeTab === 'lipsync') {
           return allModels.filter(m => m.capabilities.includes('lip-sync'));
       }
+      if (activeTab === 'inpaint') {
+          return allModels.filter(m => m.capabilities.includes('video-inpainting') || m.capabilities.includes('magic-quill'));
+      }
       return allModels.filter(m => 
           (m.capabilities.includes('text-to-video') || m.capabilities.includes('image-to-video') || m.capabilities.includes('video-to-video')) &&
-          !m.capabilities.includes('node') // Filter out utility nodes from main selector
+          !m.capabilities.includes('node') && !m.capabilities.includes('video-inpainting')
       );
   };
 
@@ -226,6 +233,36 @@ const VideoStudio: React.FC = () => {
   const updateLoraStrength = (modelId: string, strength: number) => {
       setActiveLoras(activeLoras.map(l => l.modelId === modelId ? { ...l, strength } : l));
   };
+  
+  const handleDownload = () => {
+      if (resultVideo) {
+          const a = document.createElement('a');
+          a.href = resultVideo;
+          a.download = `munzai-video-${Date.now()}.mp4`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+      }
+  };
+
+  const handleShare = async () => {
+      if (resultVideo) {
+          try {
+              if (navigator.share) {
+                  await navigator.share({
+                      title: 'MunzAI Video',
+                      text: 'Check out this video generated with MunzAI Studio!',
+                      url: resultVideo
+                  });
+              } else {
+                  await navigator.clipboard.writeText(resultVideo);
+                  alert('Video link copied to clipboard!');
+              }
+          } catch (err) {
+              console.error('Share failed:', err);
+          }
+      }
+  };
 
 
   const handleGenerate = async () => {
@@ -240,10 +277,8 @@ const VideoStudio: React.FC = () => {
             setIsGenerating(false);
             return;
         }
-
         try {
             await new Promise(resolve => setTimeout(resolve, 3000));
-            // In a real app, we would send formData with audioBlob + source to the specific API
             if (selectedModel.isLocal) {
                  throw new Error(`Local backend for ${selectedModel.name} not connected. Please start your local inference server.`);
             } else {
@@ -299,8 +334,14 @@ const VideoStudio: React.FC = () => {
     }
 
     // Inpainting specific prompt injection
-    if (activeTab === 'inpaint' && maskBlob) {
-        finalPrompt += `\n\n[INPAINT INSTRUCTION] Regenerate the masked area based on the prompt. Maintain temporal coherence with surrounding pixels. Ensure seamless blending and artifact reduction in the inpainted region.`;
+    if (activeTab === 'inpaint') {
+        if (maskBlob) {
+            finalPrompt += `\n\n[INPAINT INSTRUCTION] Regenerate the masked area based on the prompt. Maintain temporal coherence with surrounding pixels. Ensure seamless blending and artifact reduction in the inpainted region.`;
+            
+            if (magicQuillEnabled) {
+                 finalPrompt += `\n[MAGIC QUILL] Mask Concept: "${maskConcept}". Target Concept: "${targetConcept}". Flow Guidance: ${flowGuidance}.`;
+            }
+        }
     }
 
     try {
@@ -340,6 +381,9 @@ const VideoStudio: React.FC = () => {
              await new Promise(resolve => setTimeout(resolve, 2000));
              
              let logMsg = `Simulated Generation: ${selectedModel.name}`;
+             if (activeTab === 'inpaint' && magicQuillEnabled) {
+                 logMsg += ` [Magic Quill Mode: ${maskConcept} -> ${targetConcept}]`;
+             }
              if (pipelineStrategy === 'AnimateDiff') {
                  logMsg += ` + Motion: ${allModels.find(m => m.id === selectedMotionModuleId)?.name}`;
              }
@@ -373,10 +417,10 @@ const VideoStudio: React.FC = () => {
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                     <div className="p-2 bg-indigo-500/10 rounded-lg text-indigo-400">
-                        {activeTab === 'lipsync' ? <Users className="w-5 h-5" /> : <Film className="w-5 h-5" />}
+                        {activeTab === 'lipsync' ? <Users className="w-5 h-5" /> : (activeTab === 'inpaint' ? <Wand2 className="w-5 h-5" /> : <Film className="w-5 h-5" />)}
                     </div>
                     <div>
-                        <h2 className="text-lg font-bold text-white">{activeTab === 'lipsync' ? 'Lip Sync Studio' : 'Video Studio'}</h2>
+                        <h2 className="text-lg font-bold text-white">{activeTab === 'lipsync' ? 'Lip Sync Studio' : (activeTab === 'inpaint' ? 'Video Inpainting' : 'Video Studio')}</h2>
                         <div className="flex items-center gap-2">
                              <div className={`w-2 h-2 rounded-full ${selectedModel.isLocal ? 'bg-pink-500' : 'bg-emerald-500'}`} />
                              <span className="text-xs text-zinc-500">Active Model</span>
@@ -974,7 +1018,7 @@ const VideoStudio: React.FC = () => {
                     {/* Subject Actions */}
                     <div className="space-y-4 p-4 bg-zinc-950 rounded-xl border border-zinc-800">
                          <div className="flex items-center gap-2 mb-2 text-emerald-400">
-                            <MoveIcon className="w-4 h-4" />
+                            <Type className="w-4 h-4" />
                             <span className="text-sm font-bold uppercase tracking-wider">Subject & Motion</span>
                         </div>
 
@@ -1064,15 +1108,76 @@ const VideoStudio: React.FC = () => {
                                 </div>
                             )}
 
-                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-zinc-300">Inpaint Prompt</label>
-                                <textarea
-                                    value={prompt}
-                                    onChange={(e) => setPrompt(e.target.value)}
-                                    placeholder="Describe how to fill the masked area..."
-                                    className="w-full h-24 bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-pink-500 resize-none"
-                                />
-                            </div>
+                             {/* Magic Quill / Advanced Settings */}
+                             <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <div className={`p-1.5 rounded-md ${magicQuillEnabled ? 'bg-indigo-500/20 text-indigo-400' : 'bg-zinc-900 text-zinc-500'}`}>
+                                            <Wand2 className="w-4 h-4" />
+                                        </div>
+                                        <div>
+                                            <div className="text-sm font-medium text-zinc-200">Magic Quill Workflow</div>
+                                            <div className="text-[10px] text-zinc-500">Prompt Layering & Flow Guidance</div>
+                                        </div>
+                                    </div>
+                                    <button 
+                                        onClick={() => setMagicQuillEnabled(!magicQuillEnabled)}
+                                        className={`w-10 h-5 rounded-full p-0.5 transition-colors ${magicQuillEnabled ? 'bg-indigo-600' : 'bg-zinc-800'}`}
+                                    >
+                                        <div className={`w-4 h-4 bg-white rounded-full transition-transform ${magicQuillEnabled ? 'translate-x-5' : 'translate-x-0'}`} />
+                                    </button>
+                                </div>
+
+                                {magicQuillEnabled ? (
+                                    <div className="space-y-4 animate-in fade-in slide-in-from-top-2 pt-2 border-t border-zinc-800/50">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-1">
+                                                <label className="text-xs font-medium text-zinc-400">Concept to Mask/Erase</label>
+                                                <input 
+                                                    type="text" 
+                                                    value={maskConcept}
+                                                    onChange={(e) => setMaskConcept(e.target.value)}
+                                                    placeholder="e.g. Red Car, Tree, Person"
+                                                    className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-white focus:border-red-500 outline-none"
+                                                />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label className="text-xs font-medium text-zinc-400">Target Concept (Fill)</label>
+                                                <input 
+                                                    type="text" 
+                                                    value={targetConcept}
+                                                    onChange={(e) => setTargetConcept(e.target.value)}
+                                                    placeholder="e.g. Empty Road, Sci-Fi Vehicle"
+                                                    className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-white focus:border-emerald-500 outline-none"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <div className="flex justify-between text-xs text-zinc-500">
+                                                <span>Flow Guidance (Temporal Consistency)</span>
+                                                <span>{flowGuidance.toFixed(1)}</span>
+                                            </div>
+                                            <input 
+                                                type="range" min="0" max="2" step="0.1" 
+                                                value={flowGuidance}
+                                                onChange={(e) => setFlowGuidance(parseFloat(e.target.value))}
+                                                className="w-full h-1 bg-zinc-800 rounded-lg accent-indigo-500 cursor-pointer"
+                                            />
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium text-zinc-300">Inpaint Prompt</label>
+                                        <textarea
+                                            value={prompt}
+                                            onChange={(e) => setPrompt(e.target.value)}
+                                            placeholder="Describe how to fill the masked area..."
+                                            className="w-full h-24 bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-pink-500 resize-none"
+                                        />
+                                    </div>
+                                )}
+                             </div>
                         </div>
                     )}
                 </div>
@@ -1089,7 +1194,9 @@ const VideoStudio: React.FC = () => {
                     ? 'bg-zinc-800 cursor-not-allowed opacity-50' 
                     : activeTab === 'lipsync'
                         ? 'bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 shadow-orange-500/20'
-                        : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 shadow-indigo-500/20'
+                        : activeTab === 'inpaint'
+                            ? 'bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 shadow-pink-500/20'
+                            : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 shadow-indigo-500/20'
                     }`}
             >
                 {isGenerating ? (
@@ -1118,13 +1225,33 @@ const VideoStudio: React.FC = () => {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-zinc-900/50 to-zinc-950 -z-10" />
         
         {resultVideo ? (
-          <video 
-            src={resultVideo} 
-            controls 
-            autoPlay 
-            loop 
-            className="w-full h-full object-contain rounded-xl shadow-2xl"
-          />
+            <div className="w-full h-full relative group/video">
+              <video 
+                src={resultVideo} 
+                controls 
+                autoPlay 
+                loop 
+                className="w-full h-full object-contain rounded-xl shadow-2xl"
+              />
+              
+              {/* Output Actions Overlay */}
+              <div className="absolute top-4 right-4 flex flex-col gap-2 opacity-0 group-hover/video:opacity-100 transition-opacity">
+                  <button 
+                    onClick={handleDownload}
+                    className="p-3 bg-black/60 hover:bg-black/80 text-white rounded-full backdrop-blur-md border border-white/10 transition-colors shadow-xl"
+                    title="Download Video"
+                  >
+                      <Download className="w-5 h-5" />
+                  </button>
+                  <button 
+                    onClick={handleShare}
+                    className="p-3 bg-black/60 hover:bg-black/80 text-white rounded-full backdrop-blur-md border border-white/10 transition-colors shadow-xl"
+                    title="Share Video"
+                  >
+                      <Share2 className="w-5 h-5" />
+                  </button>
+              </div>
+            </div>
         ) : (
           <div className="text-center p-8">
             <div className="w-20 h-20 bg-zinc-900 rounded-full flex items-center justify-center mx-auto mb-4 border border-zinc-800 group-hover:border-zinc-700 transition-colors">

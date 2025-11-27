@@ -3,6 +3,7 @@ import Sidebar from './components/Sidebar';
 import VideoStudio from './components/VideoStudio';
 import ImageStudio from './components/ImageStudio';
 import InpaintingStudio from './components/InpaintingStudio';
+import LocalPipeline from './components/LocalPipeline';
 import Settings from './components/Settings';
 
 const App: React.FC = () => {
@@ -16,6 +17,8 @@ const App: React.FC = () => {
         return <ImageStudio />;
       case 'inpainting':
         return <InpaintingStudio />;
+      case 'local-pipeline':
+        return <LocalPipeline />;
       case 'settings':
         return <Settings />;
       default:

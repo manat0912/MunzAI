@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { AVAILABLE_MODELS } from '../services/modelRegistry';
 import { AIModel } from '../types';
-import { Server, Cloud, Loader2, Download, Key, CheckCircle, ExternalLink, HardDrive, Box, ScanLine, Trash2, FileCode, PlayCircle, Search, Cpu, Activity, Zap, Cookie, ChevronDown, Mic, Palette, Video, Terminal, FilePlus, Workflow, Puzzle, Image as ImageIcon, FileDown } from 'lucide-react';
+import { Server, Cloud, Loader2, Download, Key, CheckCircle, ExternalLink, HardDrive, Box, ScanLine, Trash2, FileCode, PlayCircle, Search, Cpu, Activity, Zap, Cookie, ChevronDown, Mic, Palette, Video, Terminal, FilePlus, Workflow, Puzzle, Image as ImageIcon, FileDown, Brush } from 'lucide-react';
 
 const Settings: React.FC = () => {
   const [localEndpoint, setLocalEndpoint] = useState('http://localhost:7860');
@@ -30,6 +30,25 @@ const Settings: React.FC = () => {
   const [ideogramKey, setIdeogramKey] = useState('');
   const [bflKey, setBflKey] = useState('');
   const [playgroundKey, setPlaygroundKey] = useState('');
+
+  // Inpainting Keys
+  const [mootionKey, setMootionKey] = useState('');
+  const [deepAiKey, setDeepAiKey] = useState('');
+
+  // GPU Rental Keys
+  const [vastKey, setVastKey] = useState('');
+  const [tensorDockKey, setTensorDockKey] = useState('');
+  const [runPodKey, setRunPodKey] = useState('');
+  const [thunderKey, setThunderKey] = useState('');
+  const [lambdaKey, setLambdaKey] = useState('');
+  const [awsKey, setAwsKey] = useState('');
+  const [gcpKey, setGcpKey] = useState('');
+  const [paperspaceKey, setPaperspaceKey] = useState('');
+  const [jarvisKey, setJarvisKey] = useState('');
+  const [genesisKey, setGenesisKey] = useState('');
+  const [saladKey, setSaladKey] = useState('');
+  const [skyPilotKey, setSkyPilotKey] = useState('');
+  const [colabKey, setColabKey] = useState('');
 
   // GPU Config
   const [gpuBackend, setGpuBackend] = useState('cuda');
@@ -288,13 +307,14 @@ moviepy>=1.0.3
       );
   };
 
-  const localVideoModels = filterModels(AVAILABLE_MODELS.filter(m => m.isLocal && (m.capabilities.includes('text-to-video') || m.capabilities.includes('image-to-video')) && !m.capabilities.includes('node') && !m.capabilities.includes('motion-module')));
+  const localVideoModels = filterModels(AVAILABLE_MODELS.filter(m => m.isLocal && (m.capabilities.includes('text-to-video') || m.capabilities.includes('image-to-video')) && !m.capabilities.includes('node') && !m.capabilities.includes('motion-module') && !m.capabilities.includes('video-inpainting')));
   const localImageModels = filterModels(AVAILABLE_MODELS.filter(m => m.isLocal && m.capabilities.includes('text-to-image') && !localVideoModels.includes(m)));
   const controlNetModels = filterModels(AVAILABLE_MODELS.filter(m => m.isLocal && m.capabilities.includes('control-adapter')));
   const loraModels = filterModels(AVAILABLE_MODELS.filter(m => m.isLocal && m.capabilities.includes('lora')));
   const lipSyncModels = filterModels(AVAILABLE_MODELS.filter(m => m.isLocal && m.capabilities.includes('lip-sync')));
   const integrationNodes = filterModels(AVAILABLE_MODELS.filter(m => m.isLocal && m.capabilities.includes('node')));
   const motionModules = filterModels(AVAILABLE_MODELS.filter(m => m.isLocal && m.capabilities.includes('motion-module')));
+  const inpaintingModels = filterModels(AVAILABLE_MODELS.filter(m => m.isLocal && (m.capabilities.includes('video-inpainting') || m.capabilities.includes('magic-quill'))));
   const filteredCustomModels = filterModels(customModels);
 
   const renderModelList = (models: AIModel[], title: string, icon: React.ReactNode) => {
@@ -640,6 +660,32 @@ moviepy>=1.0.3
                 />
             </div>
 
+            <div className="space-y-2">
+                <label className="text-sm font-medium text-zinc-300 flex items-center gap-2">
+                    <Video className="w-3 h-3 text-orange-500" /> Mootion API Key
+                </label>
+                <input 
+                    type="password" 
+                    value={mootionKey}
+                    onChange={(e) => setMootionKey(e.target.value)}
+                    placeholder="mootion-..."
+                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-orange-500 outline-none"
+                />
+            </div>
+
+            <div className="space-y-2">
+                <label className="text-sm font-medium text-zinc-300 flex items-center gap-2">
+                    <Video className="w-3 h-3 text-blue-500" /> DeepAI API Key
+                </label>
+                <input 
+                    type="password" 
+                    value={deepAiKey}
+                    onChange={(e) => setDeepAiKey(e.target.value)}
+                    placeholder="deepai-..."
+                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-blue-500 outline-none"
+                />
+            </div>
+
             {/* Enhancers */}
              <div className="space-y-2">
                 <label className="text-sm font-medium text-zinc-300 flex items-center gap-2">
@@ -697,6 +743,69 @@ moviepy>=1.0.3
                     placeholder="mango-..."
                     className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-indigo-500 outline-none"
                 />
+            </div>
+        </div>
+      </section>
+      
+      {/* GPU Rental & Cloud Compute Platforms */}
+      <section className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6">
+        <div className="flex items-center gap-3 mb-6">
+            <Server className="w-6 h-6 text-orange-400" />
+            <h2 className="text-lg font-bold text-white">GPU Rental & Cloud Compute Platforms</h2>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="space-y-2">
+                <label className="text-sm font-medium text-zinc-300">Vast.ai API Key</label>
+                <input type="password" value={vastKey} onChange={(e) => setVastKey(e.target.value)} placeholder="vast-..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-orange-500 outline-none" />
+            </div>
+            <div className="space-y-2">
+                <label className="text-sm font-medium text-zinc-300">TensorDock API Key</label>
+                <input type="password" value={tensorDockKey} onChange={(e) => setTensorDockKey(e.target.value)} placeholder="td-..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-orange-500 outline-none" />
+            </div>
+            <div className="space-y-2">
+                <label className="text-sm font-medium text-zinc-300">RunPod API Key</label>
+                <input type="password" value={runPodKey} onChange={(e) => setRunPodKey(e.target.value)} placeholder="r-..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-purple-500 outline-none" />
+            </div>
+            <div className="space-y-2">
+                <label className="text-sm font-medium text-zinc-300">Thunder Compute Key</label>
+                <input type="password" value={thunderKey} onChange={(e) => setThunderKey(e.target.value)} placeholder="tc-..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-yellow-500 outline-none" />
+            </div>
+            <div className="space-y-2">
+                <label className="text-sm font-medium text-zinc-300">Lambda Labs Key</label>
+                <input type="password" value={lambdaKey} onChange={(e) => setLambdaKey(e.target.value)} placeholder="lambda-..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-red-500 outline-none" />
+            </div>
+            <div className="space-y-2">
+                <label className="text-sm font-medium text-zinc-300">AWS Access Key</label>
+                <input type="password" value={awsKey} onChange={(e) => setAwsKey(e.target.value)} placeholder="AKIA..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-orange-400 outline-none" />
+            </div>
+            <div className="space-y-2">
+                <label className="text-sm font-medium text-zinc-300">Google Cloud JSON/Key</label>
+                <input type="password" value={gcpKey} onChange={(e) => setGcpKey(e.target.value)} placeholder="Service Account JSON..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-blue-400 outline-none" />
+            </div>
+            <div className="space-y-2">
+                <label className="text-sm font-medium text-zinc-300">Paperspace API Key</label>
+                <input type="password" value={paperspaceKey} onChange={(e) => setPaperspaceKey(e.target.value)} placeholder="ps-..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-cyan-500 outline-none" />
+            </div>
+            <div className="space-y-2">
+                <label className="text-sm font-medium text-zinc-300">Google Colab Pro Token</label>
+                <input type="password" value={colabKey} onChange={(e) => setColabKey(e.target.value)} placeholder="colab-..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-orange-500 outline-none" />
+            </div>
+            <div className="space-y-2">
+                <label className="text-sm font-medium text-zinc-300">JarvisLabs.ai Key</label>
+                <input type="password" value={jarvisKey} onChange={(e) => setJarvisKey(e.target.value)} placeholder="jarvis-..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-blue-600 outline-none" />
+            </div>
+            <div className="space-y-2">
+                <label className="text-sm font-medium text-zinc-300">Genesis Cloud Key</label>
+                <input type="password" value={genesisKey} onChange={(e) => setGenesisKey(e.target.value)} placeholder="genesis-..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-indigo-400 outline-none" />
+            </div>
+            <div className="space-y-2">
+                <label className="text-sm font-medium text-zinc-300">SkyPilot Config</label>
+                <input type="password" value={skyPilotKey} onChange={(e) => setSkyPilotKey(e.target.value)} placeholder="skypilot-..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-sky-500 outline-none" />
+            </div>
+            <div className="space-y-2">
+                <label className="text-sm font-medium text-zinc-300">Salad.io API Key</label>
+                <input type="password" value={saladKey} onChange={(e) => setSaladKey(e.target.value)} placeholder="salad-..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-green-500 outline-none" />
             </div>
         </div>
       </section>
@@ -916,6 +1025,8 @@ moviepy>=1.0.3
                 {renderModelList(controlNetModels, 'ControlNet Adapters', <ScanLine className="w-4 h-4 text-emerald-400" />)}
                 {renderModelList(loraModels, 'LoRA & Style Adapters', <Palette className="w-4 h-4 text-purple-400" />)}
                 {renderModelList(lipSyncModels, 'Lip Sync & Face Animation', <Mic className="w-4 h-4 text-orange-400" />)}
+                
+                {renderModelList(inpaintingModels, 'Video Inpainting & Magic Quill Tools', <Brush className="w-4 h-4 text-rose-400" />)}
             </div>
         </div>
       </section>

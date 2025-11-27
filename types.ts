@@ -71,11 +71,25 @@ export type ModelProvider =
   | 'StepFun'     
   | 'Pyramid'     
   | 'HPC-AI'
-  | 'Recraft'     // New
-  | 'Ideogram'    // New
-  | 'BlackForest' // New (Flux API)
-  | 'Playground'  // New
-  | 'DeepFloyd';  // New
+  | 'Recraft'     
+  | 'Ideogram'    
+  | 'BlackForest' 
+  | 'Playground'  
+  | 'DeepFloyd'
+  | 'Mootion'     
+  | 'DeepAI'
+  | 'VastAI'      // New
+  | 'TensorDock'  // New
+  | 'RunPod'      // New
+  | 'Thunder'     // New
+  | 'Lambda'      // New
+  | 'AWS'         // New
+  | 'GCP'         // New
+  | 'Paperspace'  // New
+  | 'Jarvis'      // New
+  | 'Genesis'     // New
+  | 'Salad'       // New
+  | 'SkyPilot';   // New
 
 export type ModelCapability = 
   | 'text-to-video' 
@@ -87,9 +101,11 @@ export type ModelCapability =
   | 'lip-sync'
   | 'lora'
   | 'motion-brush'
-  | 'motion-module' // For AnimateDiff
-  | 'upscaler'      // For LetsEnhance/Upscale nodes
-  | 'node';         // For Custom Integrations
+  | 'motion-module' 
+  | 'upscaler'      
+  | 'node'
+  | 'video-inpainting' 
+  | 'magic-quill';    
 
 export interface AIModel {
   id: string;
@@ -122,10 +138,26 @@ export interface AppSettings {
     nvidia?: string;      
     pika?: string;        
     letsenhance?: string; 
-    recraft?: string;     // New
-    ideogram?: string;    // New
-    bfl?: string;         // New (Black Forest Labs)
-    playground?: string;  // New
+    recraft?: string;     
+    ideogram?: string;    
+    bfl?: string;         
+    playground?: string;
+    mootion?: string;     
+    deepai?: string;      
+    // GPU Rental Keys
+    vastai?: string;
+    tensordock?: string;
+    runpod?: string;
+    thundercompute?: string;
+    lambdalabs?: string;
+    aws?: string;
+    gcp?: string;
+    paperspace?: string;
+    jarvislabs?: string;
+    genesiscloud?: string;
+    salad?: string;
+    skypilot?: string;
+    colab?: string;
   };
 }
 

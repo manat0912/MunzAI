@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Video, Image, Brush, Settings, Command, Cpu } from 'lucide-react';
+import { Video, Image, Brush, Settings, Command, Cable } from 'lucide-react';
 
 interface SidebarProps {
   activeTab: string;
@@ -27,6 +27,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
     { id: 'video', label: 'Video Studio', icon: Video, desc: 'Veo / Wan2.1' },
     { id: 'image', label: 'Image Studio', icon: Image, desc: 'Imagen / SDXL' },
     { id: 'inpainting', label: 'Magic Edit', icon: Brush, desc: 'Generative Fill' },
+    { id: 'local-pipeline', label: 'Local App Pipeline', icon: Cable, desc: 'AE / UE5 / Blender' },
   ];
 
   const usagePercent = (vramUsage / totalVram) * 100;
