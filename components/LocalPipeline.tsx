@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Cable, Power, Copy, RefreshCw, Download, CheckCircle, Activity, Terminal, AlertCircle, Layers, Monitor, Video, Image as ImageIcon, Box } from 'lucide-react';
+import { Cable, Power, Copy, RefreshCw, Download, CheckCircle, Activity, Terminal, AlertCircle, Layers, Monitor, Video, Image as ImageIcon, Box, Brush, Globe, Zap, PenTool } from 'lucide-react';
 
 const LocalPipeline: React.FC = () => {
   const [isServerRunning, setIsServerRunning] = useState(false);
@@ -25,7 +25,10 @@ const LocalPipeline: React.FC = () => {
           'POST /api/v1/generate/video [After Effects]',
           'WS connection established: Unreal Engine 5',
           'GET /api/v1/status (Health Check)',
-          'POST /api/v1/inpaint/mask [Blender Bridge]'
+          'POST /api/v1/inpaint/mask [Blender Bridge]',
+          'POST /api/v1/texture/generate [Substance Painter]',
+          'GET /api/v1/reference [ZBrush]',
+          'POST /api/v1/skybox [Enscape]'
         ];
         const randomAction = actions[Math.floor(Math.random() * actions.length)];
         const timestamp = new Date().toLocaleTimeString();
@@ -68,11 +71,46 @@ const LocalPipeline: React.FC = () => {
   };
 
   const connectors = [
+    // Core Suite
     { id: 'ae', name: 'Adobe After Effects', icon: Video, ext: '.jsx', desc: 'Direct layer-to-video generation & inpainting.' },
     { id: 'ps', name: 'Adobe Photoshop', icon: ImageIcon, ext: '.ccx', desc: 'Generative Fill & Text-to-Image panel.' },
     { id: 'ue5', name: 'Unreal Engine 5', icon: Box, ext: 'Plugin', desc: 'Real-time texture generation & skybox synthesis.' },
     { id: 'blender', name: 'Blender 4.0+', icon: Box, ext: '.zip', desc: 'Texture projection & AI render pass compositing.' },
     { id: 'resolve', name: 'Davinci Resolve', icon: Video, ext: '.lua', desc: 'Magic Mask & AI Color Grade scripts.' },
+    
+    // 3D & Sculpting
+    { id: 'c4d', name: 'Maxon Cinema 4D', icon: Box, ext: '.pyp', desc: 'AI texture generation & model variation.' },
+    { id: 'zbrush', name: 'Pixologic ZBrush', icon: Box, ext: '.zsc', desc: 'Concept sculpting reference & alpha generation.' },
+    { id: '3dcoat', name: '3DCoat', icon: Box, ext: '.txt', desc: 'Smart material creation & texturing.' },
+    { id: 'sketchup', name: 'SketchUp Pro', icon: Box, ext: '.rb', desc: 'Rendering style transfer & material generation.' },
+    
+    // Substance Suite
+    { id: 'substance-painter', name: 'Adobe Substance 3D Painter', icon: Brush, ext: '.py', desc: 'AI material synthesis & smart masks.' },
+    { id: 'substance-designer', name: 'Adobe Substance 3D Designer', icon: Layers, ext: '.sbs', desc: 'Node-based texture generation assistant.' },
+    { id: 'substance-modeler', name: 'Adobe Substance 3D Modeler', icon: Box, ext: 'Plugin', desc: 'Volumetric concept generation.' },
+    
+    // Environment & Rendering
+    { id: 'enscape', name: 'Chaos Enscape', icon: Globe, ext: 'Plugin', desc: 'Real-time environment generation.' },
+    { id: 'dimension', name: 'Adobe Dimension', icon: Box, ext: 'Plugin', desc: 'Background generation & lighting maps.' },
+    { id: 'geogen', name: 'JangaFX GeoGen', icon: Globe, ext: 'Plugin', desc: 'Terrain texture & heightmap synthesis.' },
+    { id: 'metashape', name: 'Agisoft Metashape', icon: Globe, ext: '.py', desc: 'Texture cleanup & gap filling.' },
+
+    // Video, Animation & VFX
+    { id: 'fusion', name: 'Blackmagic Fusion Studio', icon: Video, ext: '.lua', desc: 'Neural tools for compositing & VFX.' },
+    { id: 'boris', name: 'Boris FX Suite', icon: Zap, ext: 'OFX', desc: 'AI-driven visual effects & restoration.' },
+    { id: 'filmora', name: 'Wondershare Filmora', icon: Video, ext: 'Plugin', desc: 'Smart cut & AI effects integration.' },
+    { id: 'character-animator', name: 'Adobe Character Animator', icon: Video, ext: '.js', desc: 'Puppet generation & lip-sync driving.' },
+    { id: 'adobe-animator', name: 'Adobe Animate', icon: Video, ext: '.jsfl', desc: 'Vector asset generation & coloring.' },
+    { id: 'moho', name: 'Moho Pro', icon: Video, ext: '.lua', desc: 'Character asset creation & rigging assist.' },
+    
+    // Graphic Design & Photo
+    { id: 'affinity', name: 'Affinity Photo', icon: ImageIcon, ext: 'Plugin', desc: 'Generative fill & layer effects.' },
+    { id: 'coreldraw', name: 'CorelDRAW Suite', icon: PenTool, ext: '.gms', desc: 'Vector conversion & pattern generation.' },
+    { id: 'photodirector', name: 'CyberLink PhotoDirector', icon: ImageIcon, ext: 'Plugin', desc: 'Sky replacement & AI style transfer.' },
+    { id: 'on1', name: 'ON1 Photo RAW', icon: ImageIcon, ext: 'Plugin', desc: 'AI masking & retouching pipeline.' },
+    { id: 'graphics-creator', name: 'The Graphics Creator', icon: ImageIcon, ext: 'Plugin', desc: 'Asset library generation.' },
+    { id: 'illugen', name: 'JangaFX IlluGen', icon: ImageIcon, ext: 'Plugin', desc: 'Concept art & storyboard generation.' },
+    { id: 'reallusion', name: 'Reallusion Character Creator', icon: Box, ext: 'Plugin', desc: 'Skin texture synthesis & face generation.' },
   ];
 
   return (
@@ -192,7 +230,7 @@ const LocalPipeline: React.FC = () => {
             <h2 className="text-lg font-bold text-white">Application Connectors</h2>
          </div>
 
-         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
              {connectors.map((app) => (
                  <div key={app.id} className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 hover:border-zinc-700 transition-colors group">
                      <div className="flex justify-between items-start mb-3">
@@ -200,16 +238,16 @@ const LocalPipeline: React.FC = () => {
                              <div className="w-10 h-10 bg-zinc-900 rounded-lg flex items-center justify-center text-zinc-400 group-hover:text-white group-hover:bg-zinc-800 transition-all">
                                  <app.icon className="w-5 h-5" />
                              </div>
-                             <div>
-                                 <h3 className="font-bold text-zinc-200">{app.name}</h3>
+                             <div className="overflow-hidden">
+                                 <h3 className="font-bold text-zinc-200 truncate">{app.name}</h3>
                                  <span className="text-[10px] bg-zinc-800 text-zinc-500 px-1.5 py-0.5 rounded">{app.ext}</span>
                              </div>
                          </div>
-                         <button className="text-zinc-500 hover:text-white transition-colors" title="Download Plugin">
+                         <button className="text-zinc-500 hover:text-white transition-colors flex-shrink-0" title="Download Plugin">
                              <Download className="w-5 h-5" />
                          </button>
                      </div>
-                     <p className="text-xs text-zinc-500 mb-4 h-8">{app.desc}</p>
+                     <p className="text-xs text-zinc-500 mb-4 h-8 line-clamp-2">{app.desc}</p>
                      
                      <div className="flex items-center gap-2 pt-3 border-t border-zinc-900">
                          <div className={`w-2 h-2 rounded-full ${isServerRunning ? 'bg-emerald-500' : 'bg-red-500'}`} />

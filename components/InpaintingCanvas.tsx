@@ -1,3 +1,4 @@
+
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { Eraser, Pen, Undo, Redo, Trash2, Wand2, ZoomIn, ZoomOut, Move, PaintBucket, ArrowLeftRight, Eye, EyeOff, Loader2 } from 'lucide-react';
 
@@ -19,6 +20,7 @@ const InpaintingCanvas: React.FC<InpaintingCanvasProps> = ({ imageFile, imageUrl
   // Tools & State
   const [tool, setTool] = useState<Tool>('brush');
   const [brushSize, setBrushSize] = useState(30);
+  const [threshold, setThreshold] = useState(30); // Magic Wand Threshold/Sensitivity
   const [magicPrompt, setMagicPrompt] = useState('');
   const [showMagicInput, setShowMagicInput] = useState(false);
   const [zoom, setZoom] = useState(1);
@@ -331,8 +333,9 @@ const InpaintingCanvas: React.FC<InpaintingCanvasProps> = ({ imageFile, imageUrl
             const cx = targetX ?? w/2;
             const cy = targetY ?? h/2;
             
-            // Size depends on whether it's a specific click (smaller/more precise) or global prompt (larger)
-            const baseSize = targetX ? Math.min(w, h) / 6 : Math.min(w, h) / 4;
+            // Size depends on threshold (sensitivity)
+            // Higher threshold = larger/more inclusive selection
+            const baseSize = (Math.min(w, h) * (threshold / 100)) / (targetX ? 1.5 : 2.5);
             
             drawOrganicBlob(ctx, cx, cy, baseSize);
             saveState();
@@ -393,7 +396,7 @@ const InpaintingCanvas: React.FC<InpaintingCanvasProps> = ({ imageFile, imageUrl
              </button>
         </div>
 
-        {/* Center: Brush Adjustments */}
+        {/* Center: Adjustments */}
         <div className="flex items-center gap-3 bg-zinc-950/50 p-1.5 rounded-lg border border-zinc-800 flex-1 justify-center min-w-[150px]">
             {tool !== 'magic' && tool !== 'pan' && (
                 <div className="flex items-center gap-2 w-full max-w-[200px]">
@@ -409,11 +412,18 @@ const InpaintingCanvas: React.FC<InpaintingCanvasProps> = ({ imageFile, imageUrl
                 </div>
             )}
             {tool === 'magic' && (
-                <span className="text-xs text-pink-400 font-bold animate-pulse flex items-center gap-2">
-                    <span>Click object to select</span>
-                    <span className="w-1 h-1 rounded-full bg-pink-400" />
-                    <span>or type prompt</span>
-                </span>
+                <div className="flex items-center gap-2 w-full max-w-[200px]">
+                    <span className="text-[10px] text-zinc-500 font-bold uppercase w-16 text-right">Threshold</span>
+                    <input 
+                        type="range" 
+                        min="5" 
+                        max="100" 
+                        value={threshold} 
+                        onChange={(e) => setThreshold(Number(e.target.value))}
+                        className="flex-1 accent-pink-500 h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer"
+                        title="Selection Sensitivity / Size"
+                    />
+                </div>
             )}
         </div>
 

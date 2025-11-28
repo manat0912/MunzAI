@@ -38,6 +38,10 @@ const VideoStudio: React.FC = () => {
   const [uploadedVideo, setUploadedVideo] = useState<File | null>(null);
   const [uploadedVideoUrl, setUploadedVideoUrl] = useState<string | null>(null);
 
+  // Tab Specific Video Inputs
+  const [animateVideo, setAnimateVideo] = useState<File | null>(null);
+  const [presetVideo, setPresetVideo] = useState<File | null>(null);
+
   // Audio Inputs
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
@@ -144,10 +148,6 @@ const VideoStudio: React.FC = () => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setUploadedImage(file);
-      if (activeTab !== 'lipsync' && videoGenerationMode === 'image-to-video') {
-        setUploadedVideo(null); 
-        setUploadedVideoUrl(null);
-      }
       const reader = new FileReader();
       reader.onload = (ev) => setUploadedImagePreview(ev.target?.result as string);
       reader.readAsDataURL(file);
@@ -158,13 +158,22 @@ const VideoStudio: React.FC = () => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setUploadedVideo(file);
-      if (activeTab !== 'lipsync' && activeTab !== 'inpaint' && videoGenerationMode === 'video-to-video') {
-         setUploadedImage(null);
-         setUploadedImagePreview(null);
-      }
-      
       const url = URL.createObjectURL(file);
       setUploadedVideoUrl(url);
+    }
+  };
+
+  const handleAnimateVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setAnimateVideo(file);
+    }
+  };
+
+  const handlePresetVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setPresetVideo(file);
     }
   };
 
@@ -293,9 +302,9 @@ const VideoStudio: React.FC = () => {
     }
 
     // Standard Video Generation Logic
-    if (!prompt && activeTab !== 'inpaint' && !(activeTab === 'compose' && (uploadedVideo || uploadedImage))) {
-        // Relaxed validation: prompt optional if media provided in v2v/i2v
-        if (!uploadedVideo && !uploadedImage) {
+    if (!prompt && activeTab !== 'inpaint' && !(activeTab === 'compose' && (uploadedVideo || uploadedImage)) && !(activeTab === 'animate' && animateVideo) && !(activeTab === 'style' && presetVideo)) {
+        // Relaxed validation: prompt optional if media provided in v2v/i2v or animate/style
+        if (!uploadedVideo && !uploadedImage && !animateVideo && !presetVideo) {
            setIsGenerating(false);
            return; 
         }
@@ -351,15 +360,23 @@ const VideoStudio: React.FC = () => {
         // Mode specific filtering for Compose tab
         if (activeTab === 'compose') {
             if (videoGenerationMode === 'text-to-video') {
-                imageToPass = null;
-                videoToPass = null;
+                // Allow image as optional context
+                // imageToPass = uploadedImage; 
             } else if (videoGenerationMode === 'image-to-video') {
                 videoToPass = null;
                 if (!imageToPass) throw new Error("Image input required for Image-to-Video mode.");
             } else if (videoGenerationMode === 'video-to-video') {
-                imageToPass = null; 
+                // imageToPass = null; 
                 if (!videoToPass) throw new Error("Video input required for Video-to-Video mode.");
             }
+        } else if (activeTab === 'animate' && animateVideo) {
+            // Prioritize Animate tab video source if active
+            videoToPass = animateVideo;
+            imageToPass = null;
+        } else if (activeTab === 'style' && presetVideo) {
+            // Prioritize Preset tab video source if active
+            videoToPass = presetVideo;
+            imageToPass = null;
         }
 
         // If in inpainting mode, we convert the captured frame to a file to use as the visual reference/base
@@ -383,6 +400,12 @@ const VideoStudio: React.FC = () => {
              let logMsg = `Simulated Generation: ${selectedModel.name}`;
              if (activeTab === 'inpaint' && magicQuillEnabled) {
                  logMsg += ` [Magic Quill Mode: ${maskConcept} -> ${targetConcept}]`;
+             }
+             if (activeTab === 'animate' && animateVideo) {
+                 logMsg += ` [Video Source: ${animateVideo.name}]`;
+             }
+             if (activeTab === 'style' && presetVideo) {
+                 logMsg += ` [Video Source: ${presetVideo.name}]`;
              }
              if (pipelineStrategy === 'AnimateDiff') {
                  logMsg += ` + Motion: ${allModels.find(m => m.id === selectedMotionModuleId)?.name}`;
@@ -654,65 +677,66 @@ const VideoStudio: React.FC = () => {
                         </div>
                     )}
 
-                    {/* Dynamic Media Input */}
-                    {videoGenerationMode !== 'text-to-video' && (
-                        <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
-                            <label className="text-sm font-medium text-zinc-300 flex items-center justify-between">
-                                <span>Reference Media</span>
-                                {videoGenerationMode === 'video-to-video' && <span className="text-xs text-pink-400">Video-to-Video Active</span>}
-                            </label>
-                            
-                            <div className="grid grid-cols-1 gap-4">
-                                {/* Image Input (for Image-to-Video) */}
-                                {videoGenerationMode === 'image-to-video' && (
-                                    <div className={`relative group border-2 border-dashed rounded-xl p-4 text-center transition-all ${uploadedImage ? 'border-indigo-500/50 bg-indigo-500/5' : 'border-zinc-800 hover:border-zinc-700 bg-zinc-950/50'}`}>
-                                        <input 
-                                            type="file" 
-                                            accept="image/*"
-                                            onChange={handleImageUpload}
-                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                                        />
-                                        {uploadedImagePreview ? (
-                                            <div className="relative h-24 w-full flex justify-center">
-                                                <img src={uploadedImagePreview} alt="Preview" className="h-full object-contain rounded-lg" />
-                                                <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-lg">
-                                                    <span className="text-white text-xs font-medium">Change</span>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <div className="flex flex-col items-center gap-2 text-zinc-500 py-4">
-                                                <Upload className="w-5 h-5" />
-                                                <span className="text-xs">Image Source</span>
-                                            </div>
-                                        )}
+                    {/* Source Media Inputs - Always Visible */}
+                    <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
+                        <label className="text-sm font-medium text-zinc-300 flex items-center justify-between">
+                            <span>Source Media</span>
+                            <span className="text-xs text-zinc-500">
+                                {videoGenerationMode === 'text-to-video' ? 'Optional Context' : 
+                                 videoGenerationMode === 'image-to-video' ? 'Image Required' : 'Video Required'}
+                            </span>
+                        </label>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* Image Input */}
+                            <div className={`relative group border-2 border-dashed rounded-xl p-4 text-center transition-all ${uploadedImage ? 'border-indigo-500/50 bg-indigo-500/5' : 'border-zinc-800 hover:border-zinc-700 bg-zinc-950/50'}`}>
+                                <input 
+                                    type="file" 
+                                    accept="image/*"
+                                    onChange={handleImageUpload}
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                />
+                                {uploadedImagePreview ? (
+                                    <div className="relative h-24 w-full flex justify-center">
+                                        <img src={uploadedImagePreview} alt="Preview" className="h-full object-contain rounded-lg" />
+                                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-lg">
+                                            <span className="text-white text-xs font-medium">Change</span>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col items-center gap-2 text-zinc-500 py-4">
+                                        <ImageIcon className="w-5 h-5" />
+                                        <span className="text-xs">
+                                            {videoGenerationMode === 'image-to-video' ? 'Source Image' : 'Start Frame (Img)'}
+                                        </span>
                                     </div>
                                 )}
+                            </div>
 
-                                {/* Video Input (for Video-to-Video) */}
-                                {videoGenerationMode === 'video-to-video' && (
-                                    <div className={`relative group border-2 border-dashed rounded-xl p-4 text-center transition-all ${uploadedVideo ? 'border-pink-500/50 bg-pink-500/5' : 'border-zinc-800 hover:border-zinc-700 bg-zinc-950/50'}`}>
-                                         <input 
-                                            type="file" 
-                                            accept="video/*"
-                                            onChange={handleVideoUpload}
-                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                                        />
-                                        {uploadedVideo ? (
-                                            <div className="flex flex-col items-center justify-center h-24 text-pink-400">
-                                                <VideoIcon className="w-8 h-8 mb-1" />
-                                                <span className="text-xs truncate max-w-[100px]">{uploadedVideo.name}</span>
-                                            </div>
-                                        ) : (
-                                            <div className="flex flex-col items-center gap-2 text-zinc-500 py-4">
-                                                <VideoIcon className="w-5 h-5" />
-                                                <span className="text-xs">Video Source</span>
-                                            </div>
-                                        )}
+                            {/* Video Input */}
+                            <div className={`relative group border-2 border-dashed rounded-xl p-4 text-center transition-all ${uploadedVideo ? 'border-pink-500/50 bg-pink-500/5' : 'border-zinc-800 hover:border-zinc-700 bg-zinc-950/50'}`}>
+                                    <input 
+                                    type="file" 
+                                    accept="video/*"
+                                    onChange={handleVideoUpload}
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                />
+                                {uploadedVideo ? (
+                                    <div className="flex flex-col items-center justify-center h-24 text-pink-400">
+                                        <VideoIcon className="w-8 h-8 mb-1" />
+                                        <span className="text-xs truncate max-w-[100px]">{uploadedVideo.name}</span>
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col items-center gap-2 text-zinc-500 py-4">
+                                        <VideoIcon className="w-5 h-5" />
+                                        <span className="text-xs">
+                                            {videoGenerationMode === 'video-to-video' ? 'Source Video' : 'Video Reference'}
+                                        </span>
                                     </div>
                                 )}
                             </div>
                         </div>
-                    )}
+                    </div>
 
                     {/* Audio Soundtrack Section */}
                     <div className="space-y-3">
@@ -913,6 +937,34 @@ const VideoStudio: React.FC = () => {
             {/* STYLE / PRESETS TAB */}
             {activeTab === 'style' && (
                 <div className="space-y-6">
+                    {/* Reference Video Upload for Style Transfer */}
+                    <div className="space-y-2 p-4 bg-zinc-950 rounded-xl border border-zinc-800">
+                        <label className="text-sm font-medium text-zinc-300 flex items-center gap-2">
+                             <Film className="w-4 h-4 text-pink-400" />
+                             <span>Reference Video (Style Source)</span>
+                        </label>
+                        <div className={`relative group border-2 border-dashed rounded-xl p-4 text-center transition-all ${presetVideo ? 'border-pink-500/50 bg-pink-500/5' : 'border-zinc-800 hover:border-zinc-700 bg-zinc-900'}`}>
+                             <input 
+                                type="file" 
+                                accept="video/*"
+                                onChange={handlePresetVideoUpload}
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                            />
+                            {presetVideo ? (
+                                <div className="flex flex-col items-center justify-center h-24 text-pink-400">
+                                    <VideoIcon className="w-8 h-8 mb-1" />
+                                    <span className="text-xs truncate max-w-[200px]">{presetVideo.name}</span>
+                                    <span className="text-[10px] text-pink-300 mt-1">Ready for Style Transfer</span>
+                                </div>
+                            ) : (
+                                <div className="flex flex-col items-center gap-2 text-zinc-500 py-4">
+                                    <Upload className="w-5 h-5" />
+                                    <span className="text-xs">Upload Style Reference</span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
                     <div className="grid grid-cols-2 gap-3">
                         {presets.map(preset => (
                             <button
@@ -955,6 +1007,34 @@ const VideoStudio: React.FC = () => {
             {/* ANIMATION TAB */}
             {activeTab === 'animate' && (
                 <div className="space-y-6">
+                    {/* Video Source Slot */}
+                    <div className="space-y-2 p-4 bg-zinc-950 rounded-xl border border-zinc-800">
+                        <label className="text-sm font-medium text-zinc-300 flex items-center gap-2">
+                             <Film className="w-4 h-4 text-emerald-400" />
+                             <span>Reference Video (Motion Source)</span>
+                        </label>
+                        <div className={`relative group border-2 border-dashed rounded-xl p-4 text-center transition-all ${animateVideo ? 'border-emerald-500/50 bg-emerald-500/5' : 'border-zinc-800 hover:border-zinc-700 bg-zinc-900'}`}>
+                             <input 
+                                type="file" 
+                                accept="video/*"
+                                onChange={handleAnimateVideoUpload}
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                            />
+                            {animateVideo ? (
+                                <div className="flex flex-col items-center justify-center h-24 text-emerald-400">
+                                    <VideoIcon className="w-8 h-8 mb-1" />
+                                    <span className="text-xs truncate max-w-[200px]">{animateVideo.name}</span>
+                                    <span className="text-[10px] text-emerald-300 mt-1">Motion Source Loaded</span>
+                                </div>
+                            ) : (
+                                <div className="flex flex-col items-center gap-2 text-zinc-500 py-4">
+                                    <Upload className="w-5 h-5" />
+                                    <span className="text-xs">Upload Motion Reference</span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
                     {/* Camera Moves */}
                     <div className="space-y-4 p-4 bg-zinc-950 rounded-xl border border-zinc-800">
                         <div className="flex items-center gap-2 mb-2 text-indigo-400">
@@ -1188,7 +1268,7 @@ const VideoStudio: React.FC = () => {
         <div className="p-6 border-t border-zinc-800 bg-zinc-900/50">
              <button
                 onClick={handleGenerate}
-                disabled={isGenerating || (activeTab !== 'lipsync' && !prompt && activeTab !== 'inpaint' && !(activeTab === 'compose' && (uploadedVideo || uploadedImage)))}
+                disabled={isGenerating || (activeTab !== 'lipsync' && !prompt && activeTab !== 'inpaint' && !(activeTab === 'compose' && (uploadedVideo || uploadedImage)) && !(activeTab === 'animate' && animateVideo) && !(activeTab === 'style' && presetVideo))}
                 className={`w-full py-4 rounded-xl font-bold text-white shadow-lg transition-all flex items-center justify-center gap-2
                     ${isGenerating 
                     ? 'bg-zinc-800 cursor-not-allowed opacity-50' 
