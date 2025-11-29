@@ -223,39 +223,55 @@ const Settings: React.FC = () => {
   const downloadRequirements = () => {
       const content = `
 # MunzAI Studio - Advanced Dependencies
-# CUDA 12.1 Compatible Stack
+# CUDA 12.1 Optimization Stack
 
+--extra-index-url https://download.pytorch.org/whl/cu121
+
+# Core PyTorch (CUDA 12.1)
 torch>=2.2.0+cu121
 torchvision>=0.17.0+cu121
 torchaudio>=2.2.0+cu121
---extra-index-url https://download.pytorch.org/whl/cu121
 
-diffusers>=0.26.0
-transformers>=4.38.0
-accelerate>=0.27.0
-xformers>=0.0.24
-gradio>=4.19.0
-numpy>=1.26.0
-opencv-python-headless>=4.9.0
-controlnet-aux>=0.0.7
-mediapipe>=0.10.9
-wandb>=0.16.3
+# Diffusion & Transformers
+diffusers>=0.27.2
+transformers>=4.39.1
+accelerate>=0.28.0
+xformers>=0.0.25
 safetensors>=0.4.2
-peft>=0.8.2
-scikit-image>=0.22.0
-einops>=0.7.0
-omegaconf>=2.3.0
-protobuf>=4.25.0
+peft>=0.10.0
+huggingface-hub>=0.21.4
 sentencepiece>=0.2.0
-huggingface-hub>=0.20.0
-# Lip Sync Dependencies
+protobuf>=4.25.3
+omegaconf>=2.3.0
+einops>=0.7.0
+
+# UI & Processing
+gradio>=4.21.0
+numpy>=1.26.4
+opencv-python-headless>=4.9.0.80
+Pillow>=10.2.0
+scikit-image>=0.22.0
+ftfy>=6.1.3
+regex>=2023.12.25
+
+# Computer Vision & VFX
+controlnet-aux>=0.0.7
+mediapipe>=0.10.11
 facexlib>=0.3.0
 gfpgan>=1.3.8
-moviepy>=1.0.3
-# VFX & 3D
-meshroom>=2023.2.0
+insightface>=0.7.3
+basicsr>=1.4.2
+kornia>=0.7.2
+timm>=0.9.16
+rembg>=2.0.55
 openimagedenoise>=2.0.0
 ebsynth-py>=0.1.0
+meshroom>=2023.3.0
+moviepy>=1.0.3
+
+# Optimization & Tracking
+onnxruntime-gpu>=1.17.1
+wandb>=0.16.4
 `.trim();
 
       const blob = new Blob([content], { type: 'text/plain' });
@@ -269,6 +285,107 @@ ebsynth-py>=0.1.0
       URL.revokeObjectURL(url);
   };
 
+  const downloadInstallerScript = () => {
+    const scriptContent = `
+import os
+import sys
+import subprocess
+import platform
+import venv
+import shutil
+
+def run_command(command):
+    print(f"Running: {command}")
+    try:
+        subprocess.check_call(command, shell=True)
+    except subprocess.CalledProcessError as e:
+        print(f"Error executing command: {e}")
+        sys.exit(1)
+
+def main():
+    print("==========================================")
+    print("   MunzAI Studio - Local Installer")
+    print("==========================================")
+
+    # 1. System Check
+    print(f"OS: {platform.system()} {platform.release()}")
+    print(f"Python: {sys.version}")
+
+    if sys.version_info < (3, 10):
+        print("Error: Python 3.10 or higher is required.")
+        sys.exit(1)
+
+    # 2. Virtual Environment Setup
+    venv_dir = "munzai_env"
+    if os.path.exists(venv_dir):
+        print(f"Virtual environment '{venv_dir}' already exists.")
+    else:
+        print(f"Creating virtual environment in '{venv_dir}'...")
+        venv.create(venv_dir, with_pip=True)
+
+    # Determine paths
+    if platform.system() == "Windows":
+        python_exe = os.path.join(venv_dir, "Scripts", "python.exe")
+        pip_exe = os.path.join(venv_dir, "Scripts", "pip.exe")
+    else:
+        python_exe = os.path.join(venv_dir, "bin", "python")
+        pip_exe = os.path.join(venv_dir, "bin", "pip")
+
+    # 3. Upgrade Pip
+    print("Upgrading pip...")
+    run_command(f'"{python_exe}" -m pip install --upgrade pip')
+
+    # 4. Install Dependencies
+    req_file = "requirements.txt"
+    if not os.path.exists(req_file):
+        print(f"Warning: {req_file} not found. Creating default for CUDA 12.1...")
+        default_reqs = """
+--extra-index-url https://download.pytorch.org/whl/cu121
+torch>=2.2.0+cu121
+torchvision>=0.17.0+cu121
+torchaudio>=2.2.0+cu121
+diffusers>=0.27.2
+transformers>=4.39.1
+accelerate>=0.28.0
+xformers>=0.0.25
+gradio>=4.21.0
+opencv-python-headless>=4.9.0.80
+safetensors>=0.4.2
+peft>=0.10.0
+huggingface-hub>=0.21.4
+"""
+        with open(req_file, "w") as f:
+            f.write(default_reqs.strip())
+
+    print("Installing dependencies from requirements.txt...")
+    run_command(f'"{pip_exe}" install -r {req_file}')
+
+    # 5. Post-Install
+    print("\\n==========================================")
+    print("Installation Complete!")
+    print("To start the application backend:")
+    if platform.system() == "Windows":
+        print(f"1. {venv_dir}\\\\Scripts\\\\activate")
+    else:
+        print(f"1. source {venv_dir}/bin/activate")
+    print("2. python app.py")
+    print("==========================================")
+
+if __name__ == "__main__":
+    main()
+`.trim();
+
+    const blob = new Blob([scriptContent], { type: 'text/x-python' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'install_munzai.py';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const downloadPinokioScript = () => {
     const pinokioJson = {
         "version": "2.0",
@@ -280,6 +397,12 @@ ebsynth-py>=0.1.0
                 "method": "shell.run",
                 "params": {
                     "message": "npm install"
+                }
+            },
+            {
+                "method": "shell.run",
+                "params": {
+                    "message": "python install_munzai.py"
                 }
             },
             {
@@ -791,23 +914,44 @@ ebsynth-py>=0.1.0
             <Terminal className="w-6 h-6 text-green-400" />
             <h2 className="text-lg font-bold text-white">Integrations & Launchers</h2>
         </div>
-        <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center">
-                    <div className="text-black font-black text-2xl tracking-tighter">P.</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 flex flex-col justify-between h-full">
+                <div className="flex items-center gap-4 mb-4">
+                    <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center">
+                        <div className="text-black font-black text-2xl tracking-tighter">P.</div>
+                    </div>
+                    <div>
+                        <h3 className="font-bold text-zinc-200">Pinokio Integration</h3>
+                        <p className="text-sm text-zinc-500">Auto-configure via Pinokio browser.</p>
+                    </div>
                 </div>
-                <div>
-                    <h3 className="font-bold text-zinc-200">Pinokio Browser Integration</h3>
-                    <p className="text-sm text-zinc-500">Auto-configure MunzAI Studio to run within the Pinokio ecosystem.</p>
-                </div>
+                <button 
+                    onClick={downloadPinokioScript}
+                    className="w-full px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                >
+                    <Download className="w-4 h-4" />
+                    Download JSON
+                </button>
             </div>
-            <button 
-                onClick={downloadPinokioScript}
-                className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
-            >
-                <Download className="w-4 h-4" />
-                Download Script
-            </button>
+
+            <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 flex flex-col justify-between h-full">
+                <div className="flex items-center gap-4 mb-4">
+                    <div className="w-12 h-12 bg-indigo-500 rounded-lg flex items-center justify-center">
+                        <Terminal className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                        <h3 className="font-bold text-zinc-200">Local Installer Script</h3>
+                        <p className="text-sm text-zinc-500">Python script to setup environment & install CUDA 12.1 deps.</p>
+                    </div>
+                </div>
+                <button 
+                    onClick={downloadInstallerScript}
+                    className="w-full px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/20"
+                >
+                    <Download className="w-4 h-4" />
+                    Download install.py
+                </button>
+            </div>
         </div>
       </section>
 
