@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Cable, Power, Copy, RefreshCw, Download, CheckCircle, Activity, Terminal, AlertCircle, Layers, Monitor, Video, Image as ImageIcon, Box, Brush, Globe, Zap, PenTool } from 'lucide-react';
 
@@ -28,7 +29,8 @@ const LocalPipeline: React.FC = () => {
           'POST /api/v1/inpaint/mask [Blender Bridge]',
           'POST /api/v1/texture/generate [Substance Painter]',
           'GET /api/v1/reference [ZBrush]',
-          'POST /api/v1/skybox [Enscape]'
+          'POST /api/v1/skybox [Enscape]',
+          'POST /api/v1/track/stabilize [Mocha Pro]'
         ];
         const randomAction = actions[Math.floor(Math.random() * actions.length)];
         const timestamp = new Date().toLocaleTimeString();
@@ -67,7 +69,6 @@ const LocalPipeline: React.FC = () => {
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    // Could add visual feedback toast here
   };
 
   const connectors = [
@@ -77,12 +78,17 @@ const LocalPipeline: React.FC = () => {
     { id: 'ue5', name: 'Unreal Engine 5', icon: Box, ext: 'Plugin', desc: 'Real-time texture generation & skybox synthesis.' },
     { id: 'blender', name: 'Blender 4.0+', icon: Box, ext: '.zip', desc: 'Texture projection & AI render pass compositing.' },
     { id: 'resolve', name: 'Davinci Resolve', icon: Video, ext: '.lua', desc: 'Magic Mask & AI Color Grade scripts.' },
+    { id: 'nuke', name: 'Nuke (Foundry)', icon: Video, ext: '.gizmo', desc: 'Deep compositing AI enhancement.' },
+    { id: 'maya', name: 'Autodesk Maya', icon: Box, ext: '.py', desc: 'Asset generation & facial rig automation.' },
+    { id: 'houdini', name: 'SideFX Houdini', icon: Layers, ext: 'HDA', desc: 'Procedural generation AI assist.' },
     
     // 3D & Sculpting
     { id: 'c4d', name: 'Maxon Cinema 4D', icon: Box, ext: '.pyp', desc: 'AI texture generation & model variation.' },
     { id: 'zbrush', name: 'Pixologic ZBrush', icon: Box, ext: '.zsc', desc: 'Concept sculpting reference & alpha generation.' },
     { id: '3dcoat', name: '3DCoat', icon: Box, ext: '.txt', desc: 'Smart material creation & texturing.' },
     { id: 'sketchup', name: 'SketchUp Pro', icon: Box, ext: '.rb', desc: 'Rendering style transfer & material generation.' },
+    { id: '3dsmax', name: '3ds Max', icon: Box, ext: '.ms', desc: 'Archviz AI material population.' },
+    { id: 'mari', name: 'Mari', icon: Brush, ext: '.py', desc: 'High-res texture synthesis.' },
     
     // Substance Suite
     { id: 'substance-painter', name: 'Adobe Substance 3D Painter', icon: Brush, ext: '.py', desc: 'AI material synthesis & smart masks.' },
@@ -94,14 +100,20 @@ const LocalPipeline: React.FC = () => {
     { id: 'dimension', name: 'Adobe Dimension', icon: Box, ext: 'Plugin', desc: 'Background generation & lighting maps.' },
     { id: 'geogen', name: 'JangaFX GeoGen', icon: Globe, ext: 'Plugin', desc: 'Terrain texture & heightmap synthesis.' },
     { id: 'metashape', name: 'Agisoft Metashape', icon: Globe, ext: '.py', desc: 'Texture cleanup & gap filling.' },
+    { id: 'omniverse', name: 'NVIDIA Omniverse', icon: Globe, ext: 'Ext', desc: 'SimReady asset generation & AI materials.' },
+    { id: 'canvas', name: 'NVIDIA Canvas', icon: Brush, ext: 'Link', desc: 'Segmentation map to photorealism link.' },
+    { id: 'wonder-studio', name: 'Wonder Studio', icon: Video, ext: 'Plugin', desc: 'CG character overlay & lighting match.' },
 
     // Video, Animation & VFX
     { id: 'fusion', name: 'Blackmagic Fusion Studio', icon: Video, ext: '.lua', desc: 'Neural tools for compositing & VFX.' },
     { id: 'boris', name: 'Boris FX Suite', icon: Zap, ext: 'OFX', desc: 'AI-driven visual effects & restoration.' },
+    { id: 'mocha', name: 'Mocha Pro', icon: Activity, ext: 'Plugin', desc: 'Planar tracking data export & stabilization.' },
     { id: 'filmora', name: 'Wondershare Filmora', icon: Video, ext: 'Plugin', desc: 'Smart cut & AI effects integration.' },
     { id: 'character-animator', name: 'Adobe Character Animator', icon: Video, ext: '.js', desc: 'Puppet generation & lip-sync driving.' },
     { id: 'adobe-animator', name: 'Adobe Animate', icon: Video, ext: '.jsfl', desc: 'Vector asset generation & coloring.' },
     { id: 'moho', name: 'Moho Pro', icon: Video, ext: '.lua', desc: 'Character asset creation & rigging assist.' },
+    { id: 'deepmotion', name: 'DeepMotion', icon: Activity, ext: 'Link', desc: 'Video to 3D animation mocap data.' },
+    { id: 'ziva', name: 'Ziva VFX', icon: Activity, ext: 'Plugin', desc: 'Soft tissue simulation parameters.' },
     
     // Graphic Design & Photo
     { id: 'affinity', name: 'Affinity Photo', icon: ImageIcon, ext: 'Plugin', desc: 'Generative fill & layer effects.' },
@@ -111,6 +123,11 @@ const LocalPipeline: React.FC = () => {
     { id: 'graphics-creator', name: 'The Graphics Creator', icon: ImageIcon, ext: 'Plugin', desc: 'Asset library generation.' },
     { id: 'illugen', name: 'JangaFX IlluGen', icon: ImageIcon, ext: 'Plugin', desc: 'Concept art & storyboard generation.' },
     { id: 'reallusion', name: 'Reallusion Character Creator', icon: Box, ext: 'Plugin', desc: 'Skin texture synthesis & face generation.' },
+    
+    // Hardware Integrations
+    { id: 'ronin', name: 'DJI Ronin 2', icon: Activity, ext: 'Log', desc: 'Motion data import for camera tracking.' },
+    { id: 'arri', name: 'ARRI Trinity 2', icon: Activity, ext: 'Meta', desc: 'Metadata sync for post-stabilization.' },
+    { id: 'steadicam', name: 'Steadicam Volt', icon: Activity, ext: 'Log', desc: 'Horizon stabilization data sync.' },
   ];
 
   return (
@@ -197,6 +214,27 @@ const LocalPipeline: React.FC = () => {
                       Use this key in your external app settings to authenticate with MunzAI Studio.
                   </p>
                </div>
+            </div>
+            
+            {/* Module Status Indicators */}
+            <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 space-y-3">
+                <label className="text-xs text-zinc-500 font-medium uppercase">Active Modules</label>
+                <div className="flex items-center justify-between text-xs">
+                    <span className="text-zinc-400">Image Gen</span>
+                    <span className={`h-2 w-2 rounded-full ${isServerRunning ? 'bg-green-500' : 'bg-zinc-800'}`} />
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                    <span className="text-zinc-400">Video Inpainting</span>
+                    <span className={`h-2 w-2 rounded-full ${isServerRunning ? 'bg-green-500' : 'bg-zinc-800'}`} />
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                    <span className="text-zinc-400">Texture Synthesis</span>
+                    <span className={`h-2 w-2 rounded-full ${isServerRunning ? 'bg-green-500' : 'bg-zinc-800'}`} />
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                    <span className="text-zinc-400">CG/VFX 3D</span>
+                    <span className={`h-2 w-2 rounded-full ${isServerRunning ? 'bg-cyan-500' : 'bg-zinc-800'}`} />
+                </div>
             </div>
           </div>
         </div>

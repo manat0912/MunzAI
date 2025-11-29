@@ -832,6 +832,38 @@ export const AVAILABLE_MODELS: AIModel[] = [
     family: 'other'
   },
 
+  // --- SEGMENTATION & TRACKING (NEW) ---
+  {
+    id: 'sam-2',
+    name: 'Meta SAM 2 (Segment Anything)',
+    provider: 'Meta',
+    capabilities: ['segmentation', 'object-tracking'],
+    description: 'State-of-the-art segmentation and object tracking in video.',
+    isLocal: true,
+    downloadUrl: 'https://github.com/facebookresearch/segment-anything-2',
+    family: 'other'
+  },
+  {
+    id: 'depth-anything-v2',
+    name: 'Depth Anything V2',
+    provider: 'Local',
+    capabilities: ['segmentation', 'cg-vfx'],
+    description: 'Monocular depth estimation for layer separation.',
+    isLocal: true,
+    downloadUrl: 'https://github.com/DepthAnything/Depth-Anything-V2',
+    family: 'other'
+  },
+  {
+    id: 'cutie-segmentation',
+    name: 'Cutie (VOS)',
+    provider: 'Local',
+    capabilities: ['segmentation', 'object-tracking'],
+    description: 'Object-level video segmentation and tracking.',
+    isLocal: true,
+    downloadUrl: 'https://github.com/hkchengrex/Cutie',
+    family: 'other'
+  },
+
   // --- LOCAL VIDEO MODELS ---
   {
     id: 'hunyuan-video',
@@ -987,6 +1019,109 @@ export const AVAILABLE_MODELS: AIModel[] = [
     description: 'Image Prompt adapters for style transfer.',
     isLocal: true,
     downloadUrl: 'https://github.com/cubiq/ComfyUI_IPAdapter_plus',
+    family: 'other'
+  },
+
+  // --- 3D / CG / VFX MODELS ---
+  {
+    id: 'wonder3d',
+    name: 'Wonder3D',
+    provider: 'Local',
+    capabilities: ['cg-vfx'],
+    description: 'Single Image to 3D Mesh generation.',
+    isLocal: true,
+    downloadUrl: 'https://github.com/xxlong0/Wonder3D',
+    family: 'other'
+  },
+  {
+    id: 'triposr',
+    name: 'TripoSR',
+    provider: 'Local',
+    capabilities: ['cg-vfx'],
+    description: 'Fast Feedforward 3D Generation.',
+    isLocal: true,
+    downloadUrl: 'https://github.com/VAST-AI-Research/TripoSR',
+    safeTensorUrl: 'https://huggingface.co/stabilityai/TripoSR/resolve/main/model.ckpt',
+    family: 'other'
+  },
+  {
+    id: 'dreamgaussian',
+    name: 'DreamGaussian',
+    provider: 'Local',
+    capabilities: ['cg-vfx'],
+    description: 'Generative Gaussian Splatting for 3D.',
+    isLocal: true,
+    downloadUrl: 'https://github.com/dreamgaussian/dreamgaussian',
+    family: 'other'
+  },
+  {
+    id: 'material-gen',
+    name: 'MaterialGen',
+    provider: 'Local',
+    capabilities: ['cg-vfx'],
+    description: 'PBR Material & Texture Synthesis.',
+    isLocal: true,
+    downloadUrl: 'https://github.com/example/MaterialGen',
+    family: 'other'
+  },
+  {
+    id: 'flowframes-rife',
+    name: 'RIFE (Flowframes)',
+    provider: 'Local',
+    capabilities: ['cg-vfx'],
+    description: 'Real-Time Intermediate Flow Estimation for interpolation.',
+    isLocal: true,
+    downloadUrl: 'https://github.com/hzwer/arXiv2020-RIFE',
+    family: 'other'
+  },
+  {
+    id: 'ebsynth',
+    name: 'EbSynth',
+    provider: 'Local',
+    capabilities: ['cg-vfx'],
+    description: 'Example-based Video Synthesis and Style Transfer.',
+    isLocal: true,
+    downloadUrl: 'https://ebsynth.com/',
+    family: 'other'
+  },
+  {
+    id: 'meshroom',
+    name: 'Meshroom',
+    provider: 'Local',
+    capabilities: ['cg-vfx'],
+    description: 'Open source 3D Photogrammetry Pipeline.',
+    isLocal: true,
+    downloadUrl: 'https://alicevision.org/#meshroom',
+    family: 'other'
+  },
+  {
+    id: 'intel-oidn',
+    name: 'Intel Open Image Denoise',
+    provider: 'Local',
+    capabilities: ['cg-vfx'],
+    description: 'High-performance denoising library for ray tracing.',
+    isLocal: true,
+    downloadUrl: 'https://www.openimagedenoise.org/',
+    family: 'other'
+  },
+  {
+    id: 'deforum-diffusion',
+    name: 'Deforum Diffusion',
+    provider: 'Local',
+    capabilities: ['cg-vfx', 'text-to-video'],
+    description: 'Animation extension for Stable Diffusion.',
+    isLocal: true,
+    downloadUrl: 'https://github.com/deforum-art/deforum-stable-diffusion',
+    family: 'other'
+  },
+  {
+    id: 'runway-open-tools',
+    name: 'Runway ML Community Tools',
+    provider: 'Local',
+    capabilities: ['cg-vfx'],
+    description: 'Open source components for rotoscoping and matting.',
+    isLocal: true,
+    downloadUrl: 'https://github.com/runwayml',
     family: 'other'
   }
 ];

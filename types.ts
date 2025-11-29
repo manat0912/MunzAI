@@ -78,18 +78,19 @@ export type ModelProvider =
   | 'DeepFloyd'
   | 'Mootion'     
   | 'DeepAI'
-  | 'VastAI'      // New
-  | 'TensorDock'  // New
-  | 'RunPod'      // New
-  | 'Thunder'     // New
-  | 'Lambda'      // New
-  | 'AWS'         // New
-  | 'GCP'         // New
-  | 'Paperspace'  // New
-  | 'Jarvis'      // New
-  | 'Genesis'     // New
-  | 'Salad'       // New
-  | 'SkyPilot';   // New
+  | 'Meta'        // New
+  | 'VastAI'      
+  | 'TensorDock'  
+  | 'RunPod'      
+  | 'Thunder'     
+  | 'Lambda'      
+  | 'AWS'         
+  | 'GCP'         
+  | 'Paperspace'  
+  | 'Jarvis'      
+  | 'Genesis'     
+  | 'Salad'       
+  | 'SkyPilot';   
 
 export type ModelCapability = 
   | 'text-to-video' 
@@ -105,7 +106,11 @@ export type ModelCapability =
   | 'upscaler'      
   | 'node'
   | 'video-inpainting' 
-  | 'magic-quill';    
+  | 'magic-quill'
+  | 'cg-vfx'            
+  | 'hardware-motion'
+  | 'segmentation'      // New
+  | 'object-tracking';  // New
 
 export interface AIModel {
   id: string;
@@ -116,7 +121,7 @@ export interface AIModel {
   isLocal?: boolean;
   downloadUrl?: string; // For local weights repo
   safeTensorUrl?: string; // Direct link to .safetensors file
-  family?: 'sdxl' | 'flux' | 'sd15' | 'sd3' | 'wan' | 'svd' | 'hunyuan' | 'cosmos' | 'mochi' | 'animatediff' | 'allegro' | 'cogvideox' | 'pixart' | 'other'; 
+  family?: 'sdxl' | 'flux' | 'sd15' | 'sd3' | 'wan' | 'svd' | 'hunyuan' | 'cosmos' | 'mochi' | 'animatediff' | 'allegro' | 'cogvideox' | 'pixart' | 'hardware' | 'other'; 
 }
 
 export interface AppSettings {

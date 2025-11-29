@@ -5,7 +5,7 @@ import { VideoConfig, Preset, AnimationSettings, AIModel, LoraConfig, PipelineSt
 import { AVAILABLE_MODELS } from '../services/modelRegistry';
 import InpaintingCanvas from './InpaintingCanvas';
 import AudioRecorder from './AudioRecorder';
-import { Loader2, Film, Upload, Play, AlertCircle, Save, Camera, Zap, ChevronDown, Video as VideoIcon, Eraser, Scan, Scissors, Paintbrush, Info, Music, Activity, Waves, Mic2, Crosshair, Users, Palette, Plus, X, Type, Image as ImageIcon, Workflow, Layers, Wand2, Download, Share2 } from 'lucide-react';
+import { Loader2, Film, Upload, Play, AlertCircle, Save, Camera, Zap, ChevronDown, Video as VideoIcon, Eraser, Scan, Scissors, Paintbrush, Info, Music, Activity, Waves, Mic2, Crosshair, Users, Palette, Plus, X, Type, Image as ImageIcon, Workflow, Layers, Wand2, Download, Share2, Shield, Move, MousePointer2 } from 'lucide-react';
 
 const DEFAULT_PRESETS: Preset[] = [
   { id: 'scifi', name: 'Sci-Fi', category: 'Cinematic', description: 'Futuristic, neon-lit cyberpunk style', promptModifier: 'Cinematic sci-fi style, cyberpunk aesthetics, neon lighting, futuristic structures, high contrast, volumetric fog' },
@@ -58,6 +58,16 @@ const VideoStudio: React.FC = () => {
   const [maskConcept, setMaskConcept] = useState(''); // What to erase
   const [targetConcept, setTargetConcept] = useState(''); // What to fill
   const [flowGuidance, setFlowGuidance] = useState(1.0); // Optical Flow strength
+
+  // Intelligent Mapping State
+  const [smartMappingEnabled, setSmartMappingEnabled] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [detectedLayers, setDetectedLayers] = useState<string[]>([]);
+  const [replacementSource, setReplacementSource] = useState('');
+  const [replacementTarget, setReplacementTarget] = useState('');
+  const [preserveObjects, setPreserveObjects] = useState('');
+  const [trackingActive, setTrackingActive] = useState(false);
+
 
   const [config, setConfig] = useState<VideoConfig>({
     resolution: '720p',
@@ -126,7 +136,7 @@ const VideoStudio: React.FC = () => {
           return allModels.filter(m => m.capabilities.includes('lip-sync'));
       }
       if (activeTab === 'inpaint') {
-          return allModels.filter(m => m.capabilities.includes('video-inpainting') || m.capabilities.includes('magic-quill'));
+          return allModels.filter(m => m.capabilities.includes('video-inpainting') || m.capabilities.includes('magic-quill') || m.capabilities.includes('segmentation'));
       }
       return allModels.filter(m => 
           (m.capabilities.includes('text-to-video') || m.capabilities.includes('image-to-video') || m.capabilities.includes('video-to-video')) &&
@@ -207,6 +217,16 @@ const VideoStudio: React.FC = () => {
       const dataUrl = canvas.toDataURL('image/png');
       setInpaintFrame(dataUrl);
       setMaskBlob(null); // Reset mask when new frame captured
+  };
+
+  const analyzeScene = () => {
+    if (!uploadedVideoUrl) return;
+    setIsAnalyzing(true);
+    // Simulate AI Scene Analysis (SAM 2)
+    setTimeout(() => {
+        setDetectedLayers(['Sky', 'Terrain', 'Character', 'Vehicle', 'Background']);
+        setIsAnalyzing(false);
+    }, 2000);
   };
 
   const saveCustomPreset = () => {
@@ -351,6 +371,9 @@ const VideoStudio: React.FC = () => {
                  finalPrompt += `\n[MAGIC QUILL] Mask Concept: "${maskConcept}". Target Concept: "${targetConcept}". Flow Guidance: ${flowGuidance}.`;
             }
         }
+        if (smartMappingEnabled) {
+             finalPrompt += `\n[SMART MAPPING] Segmentation: SAM2. Replace class '${replacementSource}' with '${replacementTarget}'. Exclusion Mask: '${preserveObjects}'. Enable Optical Flow Tracking: ${trackingActive}.`;
+        }
     }
 
     try {
@@ -400,6 +423,9 @@ const VideoStudio: React.FC = () => {
              let logMsg = `Simulated Generation: ${selectedModel.name}`;
              if (activeTab === 'inpaint' && magicQuillEnabled) {
                  logMsg += ` [Magic Quill Mode: ${maskConcept} -> ${targetConcept}]`;
+             }
+             if (activeTab === 'inpaint' && smartMappingEnabled) {
+                 logMsg += ` [Smart Map: Replace ${replacementSource} with ${replacementTarget}, Keep ${preserveObjects}]`;
              }
              if (activeTab === 'animate' && animateVideo) {
                  logMsg += ` [Video Source: ${animateVideo.name}]`;
@@ -1165,6 +1191,111 @@ const VideoStudio: React.FC = () => {
                                     <Scan className="w-3 h-3" /> Capture Frame
                                 </button>
                             </div>
+
+                            {/* Intelligent Layer Mapping Dashboard */}
+                            <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <div className={`p-1.5 rounded-md ${smartMappingEnabled ? 'bg-cyan-500/20 text-cyan-400' : 'bg-zinc-900 text-zinc-500'}`}>
+                                            <Layers className="w-4 h-4" />
+                                        </div>
+                                        <div>
+                                            <div className="text-sm font-medium text-zinc-200">Intelligent Scene Mapping</div>
+                                            <div className="text-[10px] text-zinc-500">Segmentation, Object Tracking & Replacement</div>
+                                        </div>
+                                    </div>
+                                    <button 
+                                        onClick={() => setSmartMappingEnabled(!smartMappingEnabled)}
+                                        className={`w-10 h-5 rounded-full p-0.5 transition-colors ${smartMappingEnabled ? 'bg-cyan-600' : 'bg-zinc-800'}`}
+                                    >
+                                        <div className={`w-4 h-4 bg-white rounded-full transition-transform ${smartMappingEnabled ? 'translate-x-5' : 'translate-x-0'}`} />
+                                    </button>
+                                </div>
+
+                                {smartMappingEnabled && (
+                                    <div className="space-y-4 animate-in fade-in slide-in-from-top-2 pt-2 border-t border-zinc-800/50">
+                                        {/* Analysis Trigger */}
+                                        <div className="flex items-center justify-between">
+                                            <div className="text-xs text-zinc-400">Map out objects, terrain, and people in the scene.</div>
+                                            <button 
+                                                onClick={analyzeScene}
+                                                disabled={isAnalyzing}
+                                                className="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs rounded-lg flex items-center gap-2 transition-colors border border-zinc-700"
+                                            >
+                                                {isAnalyzing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Scan className="w-3 h-3" />}
+                                                {isAnalyzing ? 'Scanning...' : 'Scan Scene Layers'}
+                                            </button>
+                                        </div>
+
+                                        {/* Detected Layers Tags */}
+                                        {detectedLayers.length > 0 && (
+                                            <div className="flex flex-wrap gap-2 p-2 bg-zinc-900 rounded-lg border border-zinc-800">
+                                                {detectedLayers.map(layer => (
+                                                    <span key={layer} className="text-[10px] px-2 py-1 bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 rounded-md cursor-pointer hover:bg-cyan-500/20">
+                                                        {layer}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        {/* Context-Aware Replacement Inputs */}
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-1">
+                                                <label className="text-xs font-medium text-zinc-400 flex items-center gap-1">
+                                                    <MousePointer2 className="w-3 h-3" /> Replace Source
+                                                </label>
+                                                <input 
+                                                    type="text" 
+                                                    value={replacementSource}
+                                                    onChange={(e) => setReplacementSource(e.target.value)}
+                                                    placeholder="e.g. Desert Terrain"
+                                                    className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-white focus:border-cyan-500 outline-none"
+                                                />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label className="text-xs font-medium text-zinc-400 flex items-center gap-1">
+                                                    <Move className="w-3 h-3" /> With Target
+                                                </label>
+                                                <input 
+                                                    type="text" 
+                                                    value={replacementTarget}
+                                                    onChange={(e) => setReplacementTarget(e.target.value)}
+                                                    placeholder="e.g. Grassy Plains"
+                                                    className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-white focus:border-emerald-500 outline-none"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-1">
+                                            <label className="text-xs font-medium text-zinc-400 flex items-center gap-1">
+                                                <Shield className="w-3 h-3 text-orange-400" /> Preserve Objects (Exclusion Mask)
+                                            </label>
+                                            <input 
+                                                type="text" 
+                                                value={preserveObjects}
+                                                onChange={(e) => setPreserveObjects(e.target.value)}
+                                                placeholder="e.g. People, Armies, Vehicles"
+                                                className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-white focus:border-orange-500 outline-none"
+                                            />
+                                        </div>
+
+                                        {/* Tracking Toggle */}
+                                        <div className="flex items-center justify-between p-2 bg-zinc-900 rounded-lg border border-zinc-800">
+                                            <div className="flex items-center gap-2">
+                                                <Crosshair className="w-3 h-3 text-yellow-400" />
+                                                <span className="text-xs text-zinc-300">Motion Tracker / Artifact Reduction</span>
+                                            </div>
+                                            <button 
+                                                onClick={() => setTrackingActive(!trackingActive)}
+                                                className={`w-8 h-4 rounded-full p-0.5 transition-colors ${trackingActive ? 'bg-yellow-600' : 'bg-zinc-700'}`}
+                                            >
+                                                <div className={`w-3 h-3 bg-white rounded-full transition-transform ${trackingActive ? 'translate-x-4' : 'translate-x-0'}`} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
 
                             {inpaintFrame ? (
                                 <div className="space-y-2 animate-in fade-in slide-in-from-top-2">

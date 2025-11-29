@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Video, Image, Brush, Settings, Command, Cable } from 'lucide-react';
 
@@ -36,11 +37,12 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
     <div className="w-20 lg:w-72 h-screen bg-[#09090b] border-r border-zinc-800 flex flex-col justify-between fixed left-0 top-0 z-50 transition-all duration-300">
       <div>
         <div className="h-16 flex items-center justify-center lg:justify-start lg:px-6 border-b border-zinc-800">
-          <div className="w-8 h-8 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-lg flex items-center justify-center shadow-lg shadow-purple-500/20">
-            <Command className="text-white w-5 h-5" />
+          {/* App Icon: Movie Camera in Green Circle */}
+          <div className="w-9 h-9 bg-gradient-to-tr from-emerald-600 to-green-500 rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/20 border border-emerald-400/20">
+            <Video className="text-white w-4 h-4 fill-current" />
           </div>
           <span className="ml-3 font-bold text-xl tracking-tight hidden lg:block text-zinc-100">
-            Munz<span className="text-zinc-500">AI</span>
+            Munz<span className="text-emerald-500">AI</span> Studio
           </span>
         </div>
 
@@ -58,13 +60,13 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
                     : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200'
                   }`}
               >
-                <Icon className={`w-6 h-6 flex-shrink-0 ${isActive ? 'text-indigo-400' : 'text-zinc-500 group-hover:text-zinc-300'}`} />
+                <Icon className={`w-6 h-6 flex-shrink-0 ${isActive ? 'text-emerald-400' : 'text-zinc-500 group-hover:text-zinc-300'}`} />
                 <div className="ml-4 text-left hidden lg:block">
                   <div className={`font-medium ${isActive ? 'text-white' : ''}`}>{item.label}</div>
                   <div className="text-xs text-zinc-600 font-medium">{item.desc}</div>
                 </div>
                 {isActive && (
-                  <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-indigo-500 rounded-l-full hidden lg:block" />
+                  <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-emerald-500 rounded-l-full hidden lg:block" />
                 )}
               </button>
             );
@@ -81,7 +83,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
                 : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200'
                 }`}
         >
-            <Settings className={`w-6 h-6 flex-shrink-0 ${activeTab === 'settings' ? 'text-indigo-400' : 'text-zinc-500 group-hover:text-zinc-300'}`} />
+            <Settings className={`w-6 h-6 flex-shrink-0 ${activeTab === 'settings' ? 'text-emerald-400' : 'text-zinc-500 group-hover:text-zinc-300'}`} />
             <div className="ml-4 text-left hidden lg:block font-medium">Settings</div>
         </button>
 
@@ -98,7 +100,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
              </div>
              <div className="h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden">
                 <div 
-                    className="h-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)] transition-all duration-1000 ease-out" 
+                    className="h-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)] transition-all duration-1000 ease-out" 
                     style={{ width: `${usagePercent}%` }}
                 />
              </div>

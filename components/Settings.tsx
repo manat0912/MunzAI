@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { AVAILABLE_MODELS } from '../services/modelRegistry';
 import { AIModel } from '../types';
-import { Server, Cloud, Loader2, Download, Key, CheckCircle, ExternalLink, HardDrive, Box, ScanLine, Trash2, FileCode, PlayCircle, Search, Cpu, Activity, Zap, Cookie, ChevronDown, Mic, Palette, Video, Terminal, FilePlus, Workflow, Puzzle, Image as ImageIcon, FileDown, Brush } from 'lucide-react';
+import { Server, Cloud, Loader2, Download, Key, CheckCircle, ExternalLink, HardDrive, Box, ScanLine, Trash2, FileCode, PlayCircle, Search, Cpu, Activity, Zap, Cookie, ChevronDown, Mic, Palette, Video, Terminal, FilePlus, Workflow, Puzzle, Image as ImageIcon, FileDown, Brush, Cuboid } from 'lucide-react';
 
 const Settings: React.FC = () => {
   const [localEndpoint, setLocalEndpoint] = useState('http://localhost:7860');
@@ -252,6 +252,10 @@ huggingface-hub>=0.20.0
 facexlib>=0.3.0
 gfpgan>=1.3.8
 moviepy>=1.0.3
+# VFX & 3D
+meshroom>=2023.2.0
+openimagedenoise>=2.0.0
+ebsynth-py>=0.1.0
 `.trim();
 
       const blob = new Blob([content], { type: 'text/plain' });
@@ -315,6 +319,7 @@ moviepy>=1.0.3
   const integrationNodes = filterModels(AVAILABLE_MODELS.filter(m => m.isLocal && m.capabilities.includes('node')));
   const motionModules = filterModels(AVAILABLE_MODELS.filter(m => m.isLocal && m.capabilities.includes('motion-module')));
   const inpaintingModels = filterModels(AVAILABLE_MODELS.filter(m => m.isLocal && (m.capabilities.includes('video-inpainting') || m.capabilities.includes('magic-quill'))));
+  const cgVfxModels = filterModels(AVAILABLE_MODELS.filter(m => m.isLocal && m.capabilities.includes('cg-vfx')));
   const filteredCustomModels = filterModels(customModels);
 
   const renderModelList = (models: AIModel[], title: string, icon: React.ReactNode) => {
@@ -459,6 +464,7 @@ moviepy>=1.0.3
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-8 h-full overflow-y-auto">
+      
       <div className="flex items-center gap-4 mb-8">
         <div className="p-3 bg-indigo-500/10 rounded-xl text-indigo-400">
             <Server className="w-8 h-8" />
@@ -477,7 +483,7 @@ moviepy>=1.0.3
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
+             <div className="space-y-2">
                 <div className="flex justify-between items-center">
                     <label className="text-sm font-medium text-zinc-300">Google Gemini & Veo</label>
                     <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
@@ -499,36 +505,11 @@ moviepy>=1.0.3
                 </div>
                 <div className="relative">
                     <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600" />
-                    <input 
-                        type="password" 
-                        value={openAIKey}
-                        onChange={(e) => setOpenAIKey(e.target.value)}
-                        placeholder="sk-..."
-                        className="w-full bg-zinc-950 border border-zinc-800 rounded-lg pl-10 pr-4 py-3 text-white focus:border-indigo-500 outline-none"
-                    />
+                    <input type="password" value={openAIKey} onChange={(e) => setOpenAIKey(e.target.value)} placeholder="sk-..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg pl-10 pr-4 py-3 text-white focus:border-indigo-500 outline-none" />
                 </div>
             </div>
 
-            {/* NVIDIA NIM */}
-             <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                    <label className="text-sm font-medium text-zinc-300 flex items-center gap-2">
-                        <Cpu className="w-3 h-3 text-green-400" /> NVIDIA NIM Key (Cosmos)
-                    </label>
-                    <a href="https://build.nvidia.com/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
-                        Visit <ExternalLink className="w-3 h-3" />
-                    </a>
-                </div>
-                <input 
-                    type="password" 
-                    value={nvidiaKey}
-                    onChange={(e) => setNvidiaKey(e.target.value)}
-                    placeholder="nvapi-..."
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-green-500 outline-none"
-                />
-            </div>
-
-             <div className="space-y-2">
+            <div className="space-y-2">
                 <div className="flex justify-between items-center">
                     <label className="text-sm font-medium text-zinc-300">Anthropic API Key</label>
                     <a href="https://console.anthropic.com/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
@@ -537,330 +518,166 @@ moviepy>=1.0.3
                 </div>
                 <div className="relative">
                     <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600" />
-                    <input 
-                        type="password" 
-                        value={anthropicKey}
-                        onChange={(e) => setAnthropicKey(e.target.value)}
-                        placeholder="sk-ant-..."
-                        className="w-full bg-zinc-950 border border-zinc-800 rounded-lg pl-10 pr-4 py-3 text-white focus:border-indigo-500 outline-none"
-                    />
+                    <input type="password" value={anthropicKey} onChange={(e) => setAnthropicKey(e.target.value)} placeholder="sk-ant-..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg pl-10 pr-4 py-3 text-white focus:border-indigo-500 outline-none" />
                 </div>
             </div>
-            
-             <div className="space-y-2">
+
+            <div className="space-y-2">
                 <div className="flex justify-between items-center">
                     <label className="text-sm font-medium text-zinc-300">Stability AI Key</label>
                     <a href="https://platform.stability.ai/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
                         Visit <ExternalLink className="w-3 h-3" />
                     </a>
                 </div>
-                <div className="relative">
-                    <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600" />
-                    <input 
-                        type="password" 
-                        value={stabilityKey}
-                        onChange={(e) => setStabilityKey(e.target.value)}
-                        placeholder="sk-stability-..."
-                        className="w-full bg-zinc-950 border border-zinc-800 rounded-lg pl-10 pr-4 py-3 text-white focus:border-purple-500 outline-none"
-                    />
-                </div>
-            </div>
-
-            {/* NEW IMAGE API KEYS */}
-            <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                    <label className="text-sm font-medium text-zinc-300 flex items-center gap-2">
-                        <ImageIcon className="w-3 h-3 text-teal-400" /> Recraft API Key
-                    </label>
-                    <a href="https://www.recraft.ai/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
-                        Visit <ExternalLink className="w-3 h-3" />
-                    </a>
-                </div>
-                <input 
-                    type="password" 
-                    value={recraftKey}
-                    onChange={(e) => setRecraftKey(e.target.value)}
-                    placeholder="recraft-..."
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-teal-500 outline-none"
-                />
+                <input type="password" value={stabilityKey} onChange={(e) => setStabilityKey(e.target.value)} placeholder="sk-..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-indigo-500 outline-none" />
             </div>
 
             <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                    <label className="text-sm font-medium text-zinc-300 flex items-center gap-2">
-                        <ImageIcon className="w-3 h-3 text-orange-400" /> Ideogram API Key
-                    </label>
-                    <a href="https://ideogram.ai/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
+                    <label className="text-sm font-medium text-zinc-300">NVIDIA NIM Key</label>
+                    <a href="https://build.nvidia.com/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
                         Visit <ExternalLink className="w-3 h-3" />
                     </a>
                 </div>
-                <input 
-                    type="password" 
-                    value={ideogramKey}
-                    onChange={(e) => setIdeogramKey(e.target.value)}
-                    placeholder="ideogram-..."
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-orange-500 outline-none"
-                />
-            </div>
-            
-             <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                    <label className="text-sm font-medium text-zinc-300 flex items-center gap-2">
-                        <ImageIcon className="w-3 h-3 text-white" /> Flux.1 (BFL) API Key
-                    </label>
-                    <a href="https://api.bfl.ml/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
-                        Visit <ExternalLink className="w-3 h-3" />
-                    </a>
-                </div>
-                <input 
-                    type="password" 
-                    value={bflKey}
-                    onChange={(e) => setBflKey(e.target.value)}
-                    placeholder="bfl-..."
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-white outline-none"
-                />
-            </div>
-            
-             <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                    <label className="text-sm font-medium text-zinc-300 flex items-center gap-2">
-                        <ImageIcon className="w-3 h-3 text-blue-400" /> Playground AI Key
-                    </label>
-                    <a href="https://playground.com/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
-                        Visit <ExternalLink className="w-3 h-3" />
-                    </a>
-                </div>
-                <input 
-                    type="password" 
-                    value={playgroundKey}
-                    onChange={(e) => setPlaygroundKey(e.target.value)}
-                    placeholder="playground-..."
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-blue-500 outline-none"
-                />
-            </div>
-            
-            {/* New Video Gen APIs */}
-            <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                    <label className="text-sm font-medium text-zinc-300 flex items-center gap-2">
-                        <Video className="w-3 h-3 text-pink-400" /> Runway ML Key
-                    </label>
-                    <a href="https://runwayml.com/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
-                        Visit <ExternalLink className="w-3 h-3" />
-                    </a>
-                </div>
-                <input 
-                    type="password" 
-                    value={runwayKey}
-                    onChange={(e) => setRunwayKey(e.target.value)}
-                    placeholder="runway-..."
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-pink-500 outline-none"
-                />
-            </div>
-
-             <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                    <label className="text-sm font-medium text-zinc-300 flex items-center gap-2">
-                        <Video className="w-3 h-3 text-blue-400" /> Luma Dream Machine Key
-                    </label>
-                    <a href="https://lumalabs.ai/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
-                        Visit <ExternalLink className="w-3 h-3" />
-                    </a>
-                </div>
-                <input 
-                    type="password" 
-                    value={lumaKey}
-                    onChange={(e) => setLumaKey(e.target.value)}
-                    placeholder="luma-..."
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-blue-500 outline-none"
-                />
+                <input type="password" value={nvidiaKey} onChange={(e) => setNvidiaKey(e.target.value)} placeholder="nvapi-..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-indigo-500 outline-none" />
             </div>
 
             <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                    <label className="text-sm font-medium text-zinc-300 flex items-center gap-2">
-                        <Video className="w-3 h-3 text-purple-400" /> Pika Labs Key
-                    </label>
-                    <a href="https://pika.art/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
+                    <label className="text-sm font-medium text-zinc-300">Pika Labs API</label>
+                    <a href="https://pika.art/login" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
                         Visit <ExternalLink className="w-3 h-3" />
                     </a>
                 </div>
-                <input 
-                    type="password" 
-                    value={pikaKey}
-                    onChange={(e) => setPikaKey(e.target.value)}
-                    placeholder="pika-..."
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-purple-500 outline-none"
-                />
-            </div>
-            
-             <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                    <label className="text-sm font-medium text-zinc-300 flex items-center gap-2">
-                        <Video className="w-3 h-3 text-purple-400" /> Kling AI Key
-                    </label>
-                    <a href="https://klingai.com/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
-                        Visit <ExternalLink className="w-3 h-3" />
-                    </a>
-                </div>
-                <input 
-                    type="password" 
-                    value={klingKey}
-                    onChange={(e) => setKlingKey(e.target.value)}
-                    placeholder="kling-..."
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-purple-500 outline-none"
-                />
-            </div>
-            
-             <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                    <label className="text-sm font-medium text-zinc-300 flex items-center gap-2">
-                        <Video className="w-3 h-3 text-orange-400" /> Wan API Key (Cloud)
-                    </label>
-                    <a href="https://www.alibabacloud.com/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
-                        Visit <ExternalLink className="w-3 h-3" />
-                    </a>
-                </div>
-                <input 
-                    type="password" 
-                    value={wanKey}
-                    onChange={(e) => setWanKey(e.target.value)}
-                    placeholder="wan-..."
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-orange-500 outline-none"
-                />
+                <input type="password" value={pikaKey} onChange={(e) => setPikaKey(e.target.value)} placeholder="pika-..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-indigo-500 outline-none" />
             </div>
 
             <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                    <label className="text-sm font-medium text-zinc-300 flex items-center gap-2">
-                        <Video className="w-3 h-3 text-orange-500" /> Mootion API Key
-                    </label>
-                    <a href="https://www.mootion.com/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
+                    <label className="text-sm font-medium text-zinc-300">LetsEnhance API</label>
+                    <a href="https://letsenhance.io/api" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
                         Visit <ExternalLink className="w-3 h-3" />
                     </a>
                 </div>
-                <input 
-                    type="password" 
-                    value={mootionKey}
-                    onChange={(e) => setMootionKey(e.target.value)}
-                    placeholder="mootion-..."
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-orange-500 outline-none"
-                />
+                <input type="password" value={letsEnhanceKey} onChange={(e) => setLetsEnhanceKey(e.target.value)} placeholder="le-..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-indigo-500 outline-none" />
             </div>
 
+            {/* New Image APIs */}
             <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                    <label className="text-sm font-medium text-zinc-300 flex items-center gap-2">
-                        <Video className="w-3 h-3 text-blue-500" /> DeepAI API Key
-                    </label>
-                    <a href="https://deepai.org/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
-                        Visit <ExternalLink className="w-3 h-3" />
-                    </a>
+                    <label className="text-sm font-medium text-zinc-300">Recraft API</label>
+                    <a href="https://www.recraft.ai/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">Visit <ExternalLink className="w-3 h-3" /></a>
                 </div>
-                <input 
-                    type="password" 
-                    value={deepAiKey}
-                    onChange={(e) => setDeepAiKey(e.target.value)}
-                    placeholder="deepai-..."
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-blue-500 outline-none"
-                />
+                <input type="password" value={recraftKey} onChange={(e) => setRecraftKey(e.target.value)} placeholder="Key..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-indigo-500 outline-none" />
+            </div>
+            <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                    <label className="text-sm font-medium text-zinc-300">Ideogram API</label>
+                    <a href="https://ideogram.ai/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">Visit <ExternalLink className="w-3 h-3" /></a>
+                </div>
+                <input type="password" value={ideogramKey} onChange={(e) => setIdeogramKey(e.target.value)} placeholder="Key..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-indigo-500 outline-none" />
+            </div>
+            <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                    <label className="text-sm font-medium text-zinc-300">Black Forest Labs (Flux)</label>
+                    <a href="https://blackforestlabs.ai/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">Visit <ExternalLink className="w-3 h-3" /></a>
+                </div>
+                <input type="password" value={bflKey} onChange={(e) => setBflKey(e.target.value)} placeholder="Key..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-indigo-500 outline-none" />
+            </div>
+            <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                    <label className="text-sm font-medium text-zinc-300">Playground AI</label>
+                    <a href="https://playgroundai.com/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">Visit <ExternalLink className="w-3 h-3" /></a>
+                </div>
+                <input type="password" value={playgroundKey} onChange={(e) => setPlaygroundKey(e.target.value)} placeholder="Key..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-indigo-500 outline-none" />
             </div>
 
-            {/* Enhancers */}
-             <div className="space-y-2">
+            {/* Video API Keys */}
+            <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                    <label className="text-sm font-medium text-zinc-300 flex items-center gap-2">
-                        <Activity className="w-3 h-3 text-teal-400" /> LetsEnhance API Key
-                    </label>
-                    <a href="https://letsenhance.io/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
-                        Visit <ExternalLink className="w-3 h-3" />
-                    </a>
+                    <label className="text-sm font-medium text-zinc-300">Runway ML</label>
+                    <a href="https://runwayml.com/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">Visit <ExternalLink className="w-3 h-3" /></a>
                 </div>
-                <input 
-                    type="password" 
-                    value={letsEnhanceKey}
-                    onChange={(e) => setLetsEnhanceKey(e.target.value)}
-                    placeholder="api-..."
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-teal-500 outline-none"
-                />
+                <input type="password" value={runwayKey} onChange={(e) => setRunwayKey(e.target.value)} placeholder="Key..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-indigo-500 outline-none" />
+            </div>
+            <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                    <label className="text-sm font-medium text-zinc-300">Luma Labs (Dream Machine)</label>
+                    <a href="https://lumalabs.ai/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">Visit <ExternalLink className="w-3 h-3" /></a>
+                </div>
+                <input type="password" value={lumaKey} onChange={(e) => setLumaKey(e.target.value)} placeholder="Key..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-indigo-500 outline-none" />
+            </div>
+            <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                    <label className="text-sm font-medium text-zinc-300">Kling AI</label>
+                    <a href="https://kling.ai/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">Visit <ExternalLink className="w-3 h-3" /></a>
+                </div>
+                <input type="password" value={klingKey} onChange={(e) => setKlingKey(e.target.value)} placeholder="Key..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-indigo-500 outline-none" />
+            </div>
+            <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                    <label className="text-sm font-medium text-zinc-300">Wan (Alibaba Cloud)</label>
+                    <a href="https://www.alibabacloud.com/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">Visit <ExternalLink className="w-3 h-3" /></a>
+                </div>
+                <input type="password" value={wanKey} onChange={(e) => setWanKey(e.target.value)} placeholder="Key..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-indigo-500 outline-none" />
+            </div>
+
+            {/* Inpainting Keys */}
+            <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                    <label className="text-sm font-medium text-zinc-300">Mootion</label>
+                    <a href="https://www.mootion.com/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">Visit <ExternalLink className="w-3 h-3" /></a>
+                </div>
+                <input type="password" value={mootionKey} onChange={(e) => setMootionKey(e.target.value)} placeholder="Key..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-indigo-500 outline-none" />
+            </div>
+            <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                    <label className="text-sm font-medium text-zinc-300">DeepAI</label>
+                    <a href="https://deepai.org/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">Visit <ExternalLink className="w-3 h-3" /></a>
+                </div>
+                <input type="password" value={deepAiKey} onChange={(e) => setDeepAiKey(e.target.value)} placeholder="Key..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-indigo-500 outline-none" />
             </div>
 
             {/* Lip Sync Keys */}
             <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                    <label className="text-sm font-medium text-zinc-300">Hedra API Key</label>
-                    <a href="https://www.hedra.com/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
-                        Visit <ExternalLink className="w-3 h-3" />
-                    </a>
+                    <label className="text-sm font-medium text-zinc-300">Hedra API</label>
+                    <a href="https://www.hedra.com/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">Visit <ExternalLink className="w-3 h-3" /></a>
                 </div>
-                <input 
-                    type="password" 
-                    value={hedraKey}
-                    onChange={(e) => setHedraKey(e.target.value)}
-                    placeholder="hedra-..."
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-indigo-500 outline-none"
-                />
+                <input type="password" value={hedraKey} onChange={(e) => setHedraKey(e.target.value)} placeholder="Key..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-indigo-500 outline-none" />
             </div>
-
-             <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                    <label className="text-sm font-medium text-zinc-300">Remaker.ai API Key</label>
-                    <a href="https://remaker.ai/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
-                        Visit <ExternalLink className="w-3 h-3" />
-                    </a>
-                </div>
-                <input 
-                    type="password" 
-                    value={remakerKey}
-                    onChange={(e) => setRemakerKey(e.target.value)}
-                    placeholder="remaker-..."
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-indigo-500 outline-none"
-                />
-            </div>
-
-             <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                    <label className="text-sm font-medium text-zinc-300">Elai.io API Key</label>
-                    <a href="https://elai.io/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
-                        Visit <ExternalLink className="w-3 h-3" />
-                    </a>
-                </div>
-                <input 
-                    type="password" 
-                    value={elaiKey}
-                    onChange={(e) => setElaiKey(e.target.value)}
-                    placeholder="elai-..."
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-indigo-500 outline-none"
-                />
-            </div>
-            
             <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                    <label className="text-sm font-medium text-zinc-300">Mango Animate API Key</label>
-                    <a href="https://mangoanimate.com/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
-                        Visit <ExternalLink className="w-3 h-3" />
-                    </a>
+                    <label className="text-sm font-medium text-zinc-300">Remaker API</label>
+                    <a href="https://remaker.ai/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">Visit <ExternalLink className="w-3 h-3" /></a>
                 </div>
-                <input 
-                    type="password" 
-                    value={mangoKey}
-                    onChange={(e) => setMangoKey(e.target.value)}
-                    placeholder="mango-..."
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-indigo-500 outline-none"
-                />
+                <input type="password" value={remakerKey} onChange={(e) => setRemakerKey(e.target.value)} placeholder="Key..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-indigo-500 outline-none" />
+            </div>
+            <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                    <label className="text-sm font-medium text-zinc-300">Elai.io API</label>
+                    <a href="https://elai.io/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">Visit <ExternalLink className="w-3 h-3" /></a>
+                </div>
+                <input type="password" value={elaiKey} onChange={(e) => setElaiKey(e.target.value)} placeholder="Key..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-indigo-500 outline-none" />
+            </div>
+            <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                    <label className="text-sm font-medium text-zinc-300">Mango Animate API</label>
+                    <a href="https://mangoanimate.com/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">Visit <ExternalLink className="w-3 h-3" /></a>
+                </div>
+                <input type="password" value={mangoKey} onChange={(e) => setMangoKey(e.target.value)} placeholder="Key..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-indigo-500 outline-none" />
             </div>
         </div>
       </section>
-      
+
       {/* GPU Rental & Cloud Compute Platforms */}
       <section className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6">
-        <div className="flex items-center gap-3 mb-6">
+         <div className="flex items-center gap-3 mb-6">
             <Server className="w-6 h-6 text-orange-400" />
             <h2 className="text-lg font-bold text-white">GPU Rental & Cloud Compute Platforms</h2>
         </div>
-        
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div className="space-y-2">
+             <div className="space-y-2">
                 <div className="flex justify-between items-center">
                     <label className="text-sm font-medium text-zinc-300">Vast.ai API Key</label>
                     <a href="https://vast.ai/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
@@ -869,128 +686,114 @@ moviepy>=1.0.3
                 </div>
                 <input type="password" value={vastKey} onChange={(e) => setVastKey(e.target.value)} placeholder="vast-..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-orange-500 outline-none" />
             </div>
+            
             <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                    <label className="text-sm font-medium text-zinc-300">TensorDock API Key</label>
-                    <a href="https://tensordock.com/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
-                        Visit <ExternalLink className="w-3 h-3" />
-                    </a>
+                    <label className="text-sm font-medium text-zinc-300">TensorDock Key</label>
+                    <a href="https://tensordock.com/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">Visit <ExternalLink className="w-3 h-3" /></a>
                 </div>
-                <input type="password" value={tensorDockKey} onChange={(e) => setTensorDockKey(e.target.value)} placeholder="td-..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-orange-500 outline-none" />
+                <input type="password" value={tensorDockKey} onChange={(e) => setTensorDockKey(e.target.value)} placeholder="Key..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-orange-500 outline-none" />
             </div>
+            
             <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                    <label className="text-sm font-medium text-zinc-300">RunPod API Key</label>
-                    <a href="https://www.runpod.io/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
-                        Visit <ExternalLink className="w-3 h-3" />
-                    </a>
+                    <label className="text-sm font-medium text-zinc-300">RunPod Key</label>
+                    <a href="https://www.runpod.io/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">Visit <ExternalLink className="w-3 h-3" /></a>
                 </div>
-                <input type="password" value={runPodKey} onChange={(e) => setRunPodKey(e.target.value)} placeholder="r-..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-purple-500 outline-none" />
+                <input type="password" value={runPodKey} onChange={(e) => setRunPodKey(e.target.value)} placeholder="Key..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-orange-500 outline-none" />
             </div>
+
             <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                    <label className="text-sm font-medium text-zinc-300">Thunder Compute Key</label>
-                    <a href="https://thundercompute.com/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
-                        Visit <ExternalLink className="w-3 h-3" />
-                    </a>
+                    <label className="text-sm font-medium text-zinc-300">Thunder Compute</label>
+                    <a href="https://thundercompute.com/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">Visit <ExternalLink className="w-3 h-3" /></a>
                 </div>
-                <input type="password" value={thunderKey} onChange={(e) => setThunderKey(e.target.value)} placeholder="tc-..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-yellow-500 outline-none" />
+                <input type="password" value={thunderKey} onChange={(e) => setThunderKey(e.target.value)} placeholder="Key..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-orange-500 outline-none" />
             </div>
+
             <div className="space-y-2">
-                 <div className="flex justify-between items-center">
-                    <label className="text-sm font-medium text-zinc-300">Lambda Labs Key</label>
-                    <a href="https://lambdalabs.com/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
-                        Visit <ExternalLink className="w-3 h-3" />
-                    </a>
+                <div className="flex justify-between items-center">
+                    <label className="text-sm font-medium text-zinc-300">Lambda Labs</label>
+                    <a href="https://lambdalabs.com/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">Visit <ExternalLink className="w-3 h-3" /></a>
                 </div>
-                <input type="password" value={lambdaKey} onChange={(e) => setLambdaKey(e.target.value)} placeholder="lambda-..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-red-500 outline-none" />
+                <input type="password" value={lambdaKey} onChange={(e) => setLambdaKey(e.target.value)} placeholder="Key..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-orange-500 outline-none" />
             </div>
+
             <div className="space-y-2">
                 <div className="flex justify-between items-center">
                     <label className="text-sm font-medium text-zinc-300">AWS Access Key</label>
-                    <a href="https://aws.amazon.com/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
-                        Visit <ExternalLink className="w-3 h-3" />
-                    </a>
+                    <a href="https://aws.amazon.com/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">Visit <ExternalLink className="w-3 h-3" /></a>
                 </div>
-                <input type="password" value={awsKey} onChange={(e) => setAwsKey(e.target.value)} placeholder="AKIA..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-orange-400 outline-none" />
+                <input type="password" value={awsKey} onChange={(e) => setAwsKey(e.target.value)} placeholder="Key..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-orange-500 outline-none" />
             </div>
+
             <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                    <label className="text-sm font-medium text-zinc-300">Google Cloud JSON/Key</label>
-                    <a href="https://cloud.google.com/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
-                        Visit <ExternalLink className="w-3 h-3" />
-                    </a>
+                    <label className="text-sm font-medium text-zinc-300">GCP Service Key</label>
+                    <a href="https://cloud.google.com/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">Visit <ExternalLink className="w-3 h-3" /></a>
                 </div>
-                <input type="password" value={gcpKey} onChange={(e) => setGcpKey(e.target.value)} placeholder="Service Account JSON..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-blue-400 outline-none" />
+                <input type="password" value={gcpKey} onChange={(e) => setGcpKey(e.target.value)} placeholder="Key..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-orange-500 outline-none" />
             </div>
+
             <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                    <label className="text-sm font-medium text-zinc-300">Paperspace API Key</label>
-                     <a href="https://www.paperspace.com/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
-                        Visit <ExternalLink className="w-3 h-3" />
-                    </a>
+                    <label className="text-sm font-medium text-zinc-300">Paperspace Key</label>
+                    <a href="https://www.paperspace.com/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">Visit <ExternalLink className="w-3 h-3" /></a>
                 </div>
-                <input type="password" value={paperspaceKey} onChange={(e) => setPaperspaceKey(e.target.value)} placeholder="ps-..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-cyan-500 outline-none" />
+                <input type="password" value={paperspaceKey} onChange={(e) => setPaperspaceKey(e.target.value)} placeholder="Key..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-orange-500 outline-none" />
             </div>
+
             <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                    <label className="text-sm font-medium text-zinc-300">Google Colab Pro Token</label>
-                    <a href="https://colab.research.google.com/signup" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
-                        Visit <ExternalLink className="w-3 h-3" />
-                    </a>
+                    <label className="text-sm font-medium text-zinc-300">JarvisLabs Key</label>
+                    <a href="https://jarvislabs.ai/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">Visit <ExternalLink className="w-3 h-3" /></a>
                 </div>
-                <input type="password" value={colabKey} onChange={(e) => setColabKey(e.target.value)} placeholder="colab-..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-orange-500 outline-none" />
+                <input type="password" value={jarvisKey} onChange={(e) => setJarvisKey(e.target.value)} placeholder="Key..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-orange-500 outline-none" />
             </div>
+
             <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                    <label className="text-sm font-medium text-zinc-300">JarvisLabs.ai Key</label>
-                     <a href="https://jarvislabs.ai/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
-                        Visit <ExternalLink className="w-3 h-3" />
-                    </a>
+                    <label className="text-sm font-medium text-zinc-300">Genesis Cloud</label>
+                    <a href="https://www.genesiscloud.com/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">Visit <ExternalLink className="w-3 h-3" /></a>
                 </div>
-                <input type="password" value={jarvisKey} onChange={(e) => setJarvisKey(e.target.value)} placeholder="jarvis-..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-blue-600 outline-none" />
+                <input type="password" value={genesisKey} onChange={(e) => setGenesisKey(e.target.value)} placeholder="Key..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-orange-500 outline-none" />
             </div>
+
             <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                    <label className="text-sm font-medium text-zinc-300">Genesis Cloud Key</label>
-                     <a href="https://www.genesiscloud.com/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
-                        Visit <ExternalLink className="w-3 h-3" />
-                    </a>
+                    <label className="text-sm font-medium text-zinc-300">Salad.io Key</label>
+                    <a href="https://salad.com/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">Visit <ExternalLink className="w-3 h-3" /></a>
                 </div>
-                <input type="password" value={genesisKey} onChange={(e) => setGenesisKey(e.target.value)} placeholder="genesis-..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-indigo-400 outline-none" />
+                <input type="password" value={saladKey} onChange={(e) => setSaladKey(e.target.value)} placeholder="Key..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-orange-500 outline-none" />
             </div>
+
             <div className="space-y-2">
                 <div className="flex justify-between items-center">
                     <label className="text-sm font-medium text-zinc-300">SkyPilot Config</label>
-                     <a href="https://skypilot.readthedocs.io/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
-                        Visit <ExternalLink className="w-3 h-3" />
-                    </a>
+                    <a href="https://skypilot.co/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">Visit <ExternalLink className="w-3 h-3" /></a>
                 </div>
-                <input type="password" value={skyPilotKey} onChange={(e) => setSkyPilotKey(e.target.value)} placeholder="skypilot-..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-sky-500 outline-none" />
+                <input type="password" value={skyPilotKey} onChange={(e) => setSkyPilotKey(e.target.value)} placeholder="Path/Config..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-orange-500 outline-none" />
             </div>
+
             <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                    <label className="text-sm font-medium text-zinc-300">Salad.io API Key</label>
-                     <a href="https://salad.com/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
-                        Visit <ExternalLink className="w-3 h-3" />
-                    </a>
+                    <label className="text-sm font-medium text-zinc-300">Google Colab Token</label>
+                    <a href="https://colab.research.google.com/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">Visit <ExternalLink className="w-3 h-3" /></a>
                 </div>
-                <input type="password" value={saladKey} onChange={(e) => setSaladKey(e.target.value)} placeholder="salad-..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-green-500 outline-none" />
+                <input type="password" value={colabKey} onChange={(e) => setColabKey(e.target.value)} placeholder="Token..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-white focus:border-orange-500 outline-none" />
             </div>
         </div>
       </section>
 
       {/* Integrations & Launchers */}
       <section className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6">
-        <div className="flex items-center gap-3 mb-6">
+         <div className="flex items-center gap-3 mb-6">
             <Terminal className="w-6 h-6 text-green-400" />
             <h2 className="text-lg font-bold text-white">Integrations & Launchers</h2>
         </div>
-        
         <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 flex items-center justify-between">
             <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center">
-                    {/* Simulated Pinokio Logo */}
                     <div className="text-black font-black text-2xl tracking-tighter">P.</div>
                 </div>
                 <div>
@@ -1015,9 +818,7 @@ moviepy>=1.0.3
                 <HardDrive className="w-6 h-6 text-pink-400" />
                 <h2 className="text-lg font-bold text-white">Local Library Manager</h2>
             </div>
-            
-            <div className="flex flex-wrap items-center gap-3">
-                {/* Hugging Face Token Slot */}
+             <div className="flex flex-wrap items-center gap-3">
                 <div className="relative group">
                     <div className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none">
                          <Cookie className="w-3 h-3" />
@@ -1029,16 +830,8 @@ moviepy>=1.0.3
                         placeholder="HF Access Token"
                         className="bg-zinc-950 border border-zinc-800 rounded-lg pl-8 pr-3 py-2 text-xs text-white focus:border-yellow-500 outline-none w-40 focus:w-56 transition-all"
                     />
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max px-2 py-1 bg-zinc-800 text-zinc-400 text-[10px] rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity">
-                        Required for restricted models (Wan2.1, LTX)
-                    </div>
                 </div>
-
-                <button 
-                    onClick={downloadRequirements}
-                    className="flex items-center gap-2 px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-xs font-medium transition-colors"
-                    title="Download requirements.txt"
-                >
+                <button onClick={downloadRequirements} className="flex items-center gap-2 px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-xs font-medium transition-colors">
                     <FileCode className="w-4 h-4" />
                     <span>Requirements.txt</span>
                 </button>
@@ -1049,155 +842,117 @@ moviepy>=1.0.3
             </div>
         </div>
 
-        {/* Hardware Monitoring Dashboard */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-            <div className="p-4 bg-zinc-950 border border-zinc-800 rounded-xl relative overflow-hidden group">
-                <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <Cpu className="w-16 h-16" />
+        {/* Hardware Status */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div className="p-4 bg-zinc-950 border border-zinc-800 rounded-xl flex items-center gap-4">
+                <div className="p-2 bg-indigo-500/10 rounded-lg text-indigo-400"><Cpu className="w-5 h-5" /></div>
+                <div>
+                    <div className="text-xs text-zinc-500 font-bold uppercase">GPU Status</div>
+                    <div className="text-sm font-medium text-zinc-200">RTX 4090 (Simulated)</div>
                 </div>
-                <div className="flex items-center gap-2 text-xs text-zinc-500 uppercase font-bold mb-2">
-                    <Activity className="w-3 h-3" /> GPU Status
-                </div>
-                <div className="text-lg font-bold text-white flex items-center gap-2">
-                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                    NVIDIA RTX 4090
-                </div>
-                <div className="text-xs text-zinc-600 mt-1">Driver Version: 536.23</div>
             </div>
-            <div className="p-4 bg-zinc-950 border border-zinc-800 rounded-xl relative overflow-hidden group">
-                <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <Zap className="w-16 h-16" />
+            <div className="p-4 bg-zinc-950 border border-zinc-800 rounded-xl flex items-center gap-4">
+                <div className="p-2 bg-pink-500/10 rounded-lg text-pink-400"><Activity className="w-5 h-5" /></div>
+                <div>
+                    <div className="text-xs text-zinc-500 font-bold uppercase">VRAM Available</div>
+                    <div className="text-sm font-medium text-zinc-200">24.0 GB / 24.0 GB</div>
                 </div>
-                <div className="flex items-center gap-2 text-xs text-zinc-500 uppercase font-bold mb-2">
-                    <HardDrive className="w-3 h-3" /> VRAM Capacity
-                </div>
-                <div className="text-lg font-bold text-white">24.0 GB</div>
-                <div className="text-xs text-zinc-600 mt-1">Micron GDDR6X</div>
             </div>
-            <div className="p-4 bg-zinc-950 border border-zinc-800 rounded-xl relative overflow-hidden group">
-                <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <Box className="w-16 h-16" />
+             <div className="p-4 bg-zinc-950 border border-zinc-800 rounded-xl flex items-center gap-4">
+                <div className="p-2 bg-emerald-500/10 rounded-lg text-emerald-400"><Zap className="w-5 h-5" /></div>
+                <div>
+                    <div className="text-xs text-zinc-500 font-bold uppercase">CUDA Version</div>
+                    <div className="text-sm font-medium text-zinc-200">v12.1 Detected</div>
                 </div>
-                <div className="flex items-center gap-2 text-xs text-zinc-500 uppercase font-bold mb-2">
-                    <Cpu className="w-3 h-3" /> Runtime Stack
-                </div>
-                <div className="text-lg font-bold text-white">Torch 2.2.0</div>
-                <div className="text-xs text-zinc-600 mt-1">CUDA 12.1 + cuDNN 8.9</div>
             </div>
         </div>
 
-        {/* GPU Acceleration Section */}
-        <div className="p-5 bg-zinc-950/30 border border-zinc-800 rounded-xl mb-6 space-y-4">
-             <div className="flex items-center gap-2 text-zinc-200 font-bold text-sm">
-                <Zap className="w-4 h-4 text-yellow-500" />
-                <h3>GPU Acceleration & Compute Strategy</h3>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                    <label className="text-xs font-medium text-zinc-400">Preferred Backend</label>
+        {/* GPU Acceleration */}
+        <div className="mb-8 p-4 bg-zinc-950 border border-zinc-800 rounded-xl space-y-4">
+            <h3 className="text-sm font-bold text-zinc-300 flex items-center gap-2">
+                <Zap className="w-4 h-4 text-yellow-400" /> GPU Acceleration & Compute Strategy
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <div className="space-y-2">
+                    <label className="text-xs text-zinc-500 font-medium uppercase">Backend / Execution Provider</label>
                     <div className="relative">
-                        <select
+                        <select 
                             value={gpuBackend}
                             onChange={(e) => setGpuBackend(e.target.value)}
-                            className="w-full appearance-none bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:border-yellow-500 outline-none cursor-pointer transition-colors hover:bg-zinc-800"
+                            className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:border-yellow-500 outline-none appearance-none"
                         >
                             <option value="cuda">NVIDIA CUDA (Recommended)</option>
                             <option value="rocm">AMD ROCm</option>
-                            <option value="mps">Apple Metal (MPS)</option>
-                            <option value="vulkan">Vulkan (Experimental)</option>
+                            <option value="metal">Apple Metal (MPS)</option>
+                            <option value="vulkan">Vulkan</option>
                             <option value="directml">DirectML (Windows)</option>
-                            <option value="cpu">CPU Only (Slow)</option>
+                            <option value="cpu">CPU (Slow)</option>
                         </select>
-                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-zinc-500 pointer-events-none" />
+                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 pointer-events-none" />
                     </div>
                 </div>
-                <div className="space-y-2">
-                    <label className="text-xs font-medium text-zinc-400 flex justify-between">
-                        <span>Compute Device IDs</span>
-                        <span className="text-[10px] text-zinc-600">Multi-GPU: 0,1</span>
-                    </label>
-                    <input
-                        type="text"
+                 <div className="space-y-2">
+                    <label className="text-xs text-zinc-500 font-medium uppercase">Device IDs (Comma Separated)</label>
+                    <input 
+                        type="text" 
                         value={deviceIds}
                         onChange={(e) => setDeviceIds(e.target.value)}
-                        placeholder="0"
-                        className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:border-yellow-500 outline-none font-mono"
+                        placeholder="0, 1..."
+                        className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:border-yellow-500 outline-none"
                     />
+                    <p className="text-[10px] text-zinc-600">Specify GPU indices for multi-gpu setups.</p>
                 </div>
             </div>
         </div>
 
-        <div className="space-y-6">
-            {/* Connection & Search Panel */}
-            <div className="p-4 bg-zinc-950/50 border border-zinc-800/50 rounded-xl space-y-4">
-                <div className="flex flex-col md:flex-row gap-4 items-end">
-                    <div className="flex-1 space-y-2 w-full">
-                        <label className="text-sm font-medium text-zinc-300">Local Backend URL (Gradio/ComfyUI)</label>
-                        <input 
-                            type="text" 
-                            value={localEndpoint}
-                            onChange={(e) => setLocalEndpoint(e.target.value)}
-                            className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-2 text-white focus:border-pink-500 outline-none font-mono text-sm"
-                        />
-                    </div>
-                    <button className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
-                        <PlayCircle className="w-4 h-4" />
-                        Test Connection
-                    </button>
+        <div className="p-4 bg-zinc-950/50 border border-zinc-800/50 rounded-xl space-y-4 mb-8">
+            <div className="flex flex-col md:flex-row gap-4 items-end">
+                <div className="flex-1 space-y-2 w-full">
+                    <label className="text-sm font-medium text-zinc-300">Local Backend URL (Gradio/ComfyUI)</label>
+                    <input type="text" value={localEndpoint} onChange={(e) => setLocalEndpoint(e.target.value)} className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-2 text-white focus:border-pink-500 outline-none font-mono text-sm" />
                 </div>
-
-                <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
-                    <input 
-                        type="text" 
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Search models by name or description..."
-                        className="w-full bg-zinc-950 border border-zinc-800 rounded-lg pl-10 pr-4 py-2 text-sm text-white focus:border-indigo-500 outline-none"
-                    />
-                </div>
+                <button className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2"><PlayCircle className="w-4 h-4" /> Test Connection</button>
             </div>
+            <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search models by name or description..." className="w-full bg-zinc-950 border border-zinc-800 rounded-lg pl-10 pr-4 py-2 text-sm text-white focus:border-indigo-500 outline-none" />
+            </div>
+        </div>
+
+        {/* Import Custom SafeTensor Model Section */}
+        <div className="p-4 bg-zinc-950/80 border border-dashed border-zinc-700 rounded-xl flex items-center justify-between mb-8">
+             <div className="flex items-center gap-3">
+                 <div className="p-2 bg-blue-500/10 rounded-lg text-blue-400">
+                     <FilePlus className="w-5 h-5" />
+                 </div>
+                 <div>
+                     <h4 className="text-sm font-bold text-zinc-200">Import Custom Model (.safetensors)</h4>
+                     <p className="text-xs text-zinc-500">Add local weights directly to your library.</p>
+                 </div>
+             </div>
+             <div className="relative">
+                 <input type="file" accept=".safetensors,.ckpt,.bin" ref={fileInputRef} onChange={handleImportModel} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                 <button className="px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-medium transition-colors flex items-center gap-2">
+                     <Download className="w-3 h-3" /> Import File
+                 </button>
+             </div>
+        </div>
+
+        <div className="space-y-8">
+            {renderModelList(filteredCustomModels, 'Custom Imported Models', <HardDrive className="w-4 h-4 text-blue-400" />)}
+            {renderModelList(localVideoModels, 'Video Generation Models', <Box className="w-4 h-4 text-pink-400" />)}
+            {renderModelList(localImageModels, 'Image Generation Models', <Box className="w-4 h-4 text-indigo-400" />)}
             
-            {/* Import Custom SafeTensor Model Section */}
-            <div className="p-4 bg-zinc-950/80 border border-dashed border-zinc-700 rounded-xl flex items-center justify-between">
-                 <div className="flex items-center gap-3">
-                     <div className="p-2 bg-blue-500/10 rounded-lg text-blue-400">
-                         <FilePlus className="w-5 h-5" />
-                     </div>
-                     <div>
-                         <h4 className="text-sm font-bold text-zinc-200">Import Custom Model (.safetensors)</h4>
-                         <p className="text-xs text-zinc-500">Add local weights directly to your library.</p>
-                     </div>
-                 </div>
-                 <div className="relative">
-                     <input 
-                        type="file" 
-                        accept=".safetensors,.ckpt,.bin" 
-                        ref={fileInputRef}
-                        onChange={handleImportModel}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                     />
-                     <button className="px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-medium transition-colors flex items-center gap-2">
-                         <Download className="w-3 h-3" /> Import File
-                     </button>
-                 </div>
-            </div>
+            {renderModelList(integrationNodes, 'Community Nodes & Integrations', <Puzzle className="w-4 h-4 text-green-400" />)}
+            {renderModelList(motionModules, 'Motion Modules (AnimateDiff)', <Workflow className="w-4 h-4 text-orange-400" />)}
 
-            <div className="space-y-8">
-                {renderModelList(filteredCustomModels, 'Custom Imported Models', <HardDrive className="w-4 h-4 text-blue-400" />)}
-                {renderModelList(localVideoModels, 'Video Generation Models', <Box className="w-4 h-4 text-pink-400" />)}
-                {renderModelList(localImageModels, 'Image Generation Models', <Box className="w-4 h-4 text-indigo-400" />)}
-                
-                {/* Node & Integration Manager */}
-                {renderModelList(integrationNodes, 'Community Nodes & Integrations', <Puzzle className="w-4 h-4 text-green-400" />)}
-                {renderModelList(motionModules, 'Motion Modules (AnimateDiff)', <Workflow className="w-4 h-4 text-orange-400" />)}
-
-                {renderModelList(controlNetModels, 'ControlNet Adapters', <ScanLine className="w-4 h-4 text-emerald-400" />)}
-                {renderModelList(loraModels, 'LoRA & Style Adapters', <Palette className="w-4 h-4 text-purple-400" />)}
-                {renderModelList(lipSyncModels, 'Lip Sync & Face Animation', <Mic className="w-4 h-4 text-orange-400" />)}
-                
-                {renderModelList(inpaintingModels, 'Video Inpainting & Magic Quill Tools', <Brush className="w-4 h-4 text-rose-400" />)}
-            </div>
+            {renderModelList(controlNetModels, 'ControlNet Adapters', <ScanLine className="w-4 h-4 text-emerald-400" />)}
+            {renderModelList(loraModels, 'LoRA & Style Adapters', <Palette className="w-4 h-4 text-purple-400" />)}
+            {renderModelList(lipSyncModels, 'Lip Sync & Face Animation', <Mic className="w-4 h-4 text-orange-400" />)}
+            
+            {renderModelList(inpaintingModels, 'Video Inpainting & Magic Quill Tools', <Brush className="w-4 h-4 text-rose-400" />)}
+            
+            {renderModelList(cgVfxModels, 'CG / VFX & 3D Models', <Cuboid className="w-4 h-4 text-cyan-400" />)}
         </div>
       </section>
     </div>
