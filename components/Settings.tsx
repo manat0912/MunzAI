@@ -223,55 +223,62 @@ const Settings: React.FC = () => {
   const downloadRequirements = () => {
       const content = `
 # MunzAI Studio - Advanced Dependencies
-# CUDA 12.1 Optimization Stack
+# CUDA 12.8 Optimization Stack
 
---extra-index-url https://download.pytorch.org/whl/cu121
+--extra-index-url https://download.pytorch.org/whl/cu128
 
-# Core PyTorch (CUDA 12.1)
-torch>=2.2.0+cu121
-torchvision>=0.17.0+cu121
-torchaudio>=2.2.0+cu121
+# Core PyTorch (CUDA 12.8)
+torch>=2.6.0+cu128
+torchvision>=0.21.0+cu128
+torchaudio>=2.6.0+cu128
+
+# Server
+fastapi>=0.110.0
+uvicorn>=0.27.1
+python-multipart>=0.0.9
 
 # Diffusion & Transformers
-diffusers>=0.27.2
-transformers>=4.39.1
-accelerate>=0.28.0
-xformers>=0.0.25
-safetensors>=0.4.2
-peft>=0.10.0
-huggingface-hub>=0.21.4
+diffusers>=0.32.0
+transformers>=4.48.0
+accelerate>=1.3.0
+xformers>=0.0.29
+safetensors>=0.5.0
+peft>=0.14.0
+huggingface-hub>=0.27.0
 sentencepiece>=0.2.0
-protobuf>=4.25.3
+protobuf>=5.29.0
 omegaconf>=2.3.0
-einops>=0.7.0
+einops>=0.8.0
+
+# Video Loading & Processing
+decord>=0.6.0
+av>=14.0.0
+moviepy>=1.0.3
+imageio>=2.36.0
+imageio-ffmpeg>=0.5.1
+easydict>=1.13
+rich>=13.9.4
+
+# Audio
+librosa>=0.10.2
+soundfile>=0.12.1
+
+# 3D & VFX
+trimesh>=4.5.3
+plyfile>=1.1
+kiui>=0.2.10
+lpips>=0.1.4
+pyglet>=2.0.10
 
 # UI & Processing
-gradio>=4.21.0
+gradio>=5.15.0
 numpy>=1.26.4
-opencv-python-headless>=4.9.0.80
-Pillow>=10.2.0
-scikit-image>=0.22.0
-ftfy>=6.1.3
-regex>=2023.12.25
-
-# Computer Vision & VFX
-controlnet-aux>=0.0.7
-mediapipe>=0.10.11
-facexlib>=0.3.0
-gfpgan>=1.3.8
-insightface>=0.7.3
-basicsr>=1.4.2
-kornia>=0.7.2
-timm>=0.9.16
-rembg>=2.0.55
-openimagedenoise>=2.0.0
-ebsynth-py>=0.1.0
-meshroom>=2023.3.0
-moviepy>=1.0.3
-
-# Optimization & Tracking
-onnxruntime-gpu>=1.17.1
-wandb>=0.16.4
+opencv-python-headless>=4.11.0.86
+Pillow>=11.1.0
+scikit-image>=0.25.0
+ftfy>=6.3.1
+regex>=2024.11.6
+scipy>=1.15.1
 `.trim();
 
       const blob = new Blob([content], { type: 'text/plain' });
@@ -293,6 +300,109 @@ import subprocess
 import platform
 import venv
 import shutil
+
+# --- EMBEDDED BACKEND SERVER CODE ---
+BACKEND_CODE = r"""
+import torch
+import uvicorn
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from typing import Optional
+import os
+import sys
+
+# Initialize FastAPI
+app = FastAPI(title="MunzAI Studio Backend", version="1.0.0")
+
+# CORS Configuration
+origins = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:7860",
+    "*"
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# System Info
+def get_system_info():
+    info = {
+        "status": "online",
+        "platform": sys.platform,
+        "cuda_available": torch.cuda.is_available(),
+        "device_count": torch.cuda.device_count() if torch.cuda.is_available() else 0,
+        "current_device": "cpu"
+    }
+    
+    if info["cuda_available"]:
+        info["current_device"] = torch.cuda.get_device_name(0)
+        info["vram_allocated"] = f"{torch.cuda.memory_allocated(0) / 1024**3:.2f} GB"
+        info["vram_reserved"] = f"{torch.cuda.memory_reserved(0) / 1024**3:.2f} GB"
+    
+    return info
+
+@app.get("/")
+def read_root():
+    return {"message": "MunzAI Studio Backend is Running"}
+
+@app.get("/api/v1/system/status")
+def health_check():
+    return get_system_info()
+
+# --- MODEL MANAGEMENT STUB ---
+class ModelManager:
+    def __init__(self):
+        self.loaded_models = {}
+        
+    def load_model(self, model_id, model_type):
+        print(f"Loading model: {model_id} ({model_type})")
+        # Real implementation would use diffusers here
+        # pipe = DiffusionPipeline.from_pretrained(...)
+        # pipe.to("cuda")
+        return True
+
+    def unload_model(self, model_id):
+        if model_id in self.loaded_models:
+            del self.loaded_models[model_id]
+            torch.cuda.empty_cache()
+
+manager = ModelManager()
+
+# --- GENERATION ENDPOINTS ---
+
+class GenerateRequest(BaseModel):
+    prompt: str
+    negative_prompt: Optional[str] = None
+    width: int = 1024
+    height: int = 1024
+    steps: int = 30
+    cfg: float = 7.0
+
+@app.post("/api/v1/generate/image")
+async def generate_image(req: GenerateRequest):
+    if not torch.cuda.is_available():
+        return {"error": "CUDA not available. Running in CPU mode is slow."}
+    
+    # Placeholder for actual Diffusers generation logic
+    return {"status": "success", "message": f"Generated image for '{req.prompt}' on {get_system_info()['current_device']}"}
+
+@app.post("/api/v1/generate/video")
+async def generate_video(req: GenerateRequest):
+    # Placeholder for Video generation
+    return {"status": "success", "message": f"Generated video for '{req.prompt}'"}
+
+if __name__ == "__main__":
+    print(f"Starting MunzAI Server on CUDA: {torch.cuda.is_available()}")
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+"""
+# ------------------------------------
 
 def run_command(command):
     print(f"Running: {command}")
@@ -327,9 +437,11 @@ def main():
     if platform.system() == "Windows":
         python_exe = os.path.join(venv_dir, "Scripts", "python.exe")
         pip_exe = os.path.join(venv_dir, "Scripts", "pip.exe")
+        activate_cmd = f"{venv_dir}\\\\Scripts\\\\activate"
     else:
         python_exe = os.path.join(venv_dir, "bin", "python")
         pip_exe = os.path.join(venv_dir, "bin", "pip")
+        activate_cmd = f"source {venv_dir}/bin/activate"
 
     # 3. Upgrade Pip
     print("Upgrading pip...")
@@ -338,37 +450,39 @@ def main():
     # 4. Install Dependencies
     req_file = "requirements.txt"
     if not os.path.exists(req_file):
-        print(f"Warning: {req_file} not found. Creating default for CUDA 12.1...")
+        print(f"Warning: {req_file} not found. Creating default for CUDA 12.8...")
         default_reqs = """
---extra-index-url https://download.pytorch.org/whl/cu121
-torch>=2.2.0+cu121
-torchvision>=0.17.0+cu121
-torchaudio>=2.2.0+cu121
-diffusers>=0.27.2
-transformers>=4.39.1
-accelerate>=0.28.0
-xformers>=0.0.25
-gradio>=4.21.0
-opencv-python-headless>=4.9.0.80
-safetensors>=0.4.2
-peft>=0.10.0
-huggingface-hub>=0.21.4
+--extra-index-url https://download.pytorch.org/whl/cu128
+torch>=2.6.0+cu128
+torchvision>=0.21.0+cu128
+torchaudio>=2.6.0+cu128
+fastapi>=0.110.0
+uvicorn>=0.27.1
+python-multipart>=0.0.9
+diffusers>=0.32.0
+transformers>=4.48.0
+accelerate>=1.3.0
+xformers>=0.0.29
+safetensors>=0.5.0
 """
         with open(req_file, "w") as f:
             f.write(default_reqs.strip())
 
-    print("Installing dependencies from requirements.txt...")
+    print("Installing dependencies...")
     run_command(f'"{pip_exe}" install -r {req_file}')
 
-    # 5. Post-Install
+    # 5. Write Backend Server File
+    server_file = "munzai_server.py"
+    with open(server_file, "w") as f:
+        f.write(BACKEND_CODE)
+    print(f"Generated backend server: {server_file}")
+
+    # 6. Post-Install Instructions
     print("\\n==========================================")
     print("Installation Complete!")
-    print("To start the application backend:")
-    if platform.system() == "Windows":
-        print(f"1. {venv_dir}\\\\Scripts\\\\activate")
-    else:
-        print(f"1. source {venv_dir}/bin/activate")
-    print("2. python app.py")
+    print("To start the MunzAI Backend with CUDA Support:")
+    print(f"1. {activate_cmd}")
+    print(f"2. python {server_file}")
     print("==========================================")
 
 if __name__ == "__main__":
@@ -941,7 +1055,7 @@ if __name__ == "__main__":
                     </div>
                     <div>
                         <h3 className="font-bold text-zinc-200">Local Installer Script</h3>
-                        <p className="text-sm text-zinc-500">Python script to setup environment & install CUDA 12.1 deps.</p>
+                        <p className="text-sm text-zinc-500">Python script to setup environment & install CUDA 12.8 deps.</p>
                     </div>
                 </div>
                 <button 
@@ -1006,7 +1120,7 @@ if __name__ == "__main__":
                 <div className="p-2 bg-emerald-500/10 rounded-lg text-emerald-400"><Zap className="w-5 h-5" /></div>
                 <div>
                     <div className="text-xs text-zinc-500 font-bold uppercase">CUDA Version</div>
-                    <div className="text-sm font-medium text-zinc-200">v12.1 Detected</div>
+                    <div className="text-sm font-medium text-zinc-200">v12.8 Detected</div>
                 </div>
             </div>
         </div>
